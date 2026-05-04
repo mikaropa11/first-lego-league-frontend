@@ -78,7 +78,7 @@ export default function EditMatchForm({
         setSubmitError(null);
 
         try {
-            const destination = await updateMatch(matchId, {
+            const result = await updateMatch(matchId, {
                 startTime: data.startTime,
                 endTime: data.endTime,
                 round: data.round,
@@ -87,7 +87,13 @@ export default function EditMatchForm({
                 teamB: data.teamB,
                 referee: data.referee,
             });
-            router.push(destination);
+
+            if (result.error) {
+                setSubmitError(result.error);
+                return;
+            }
+
+            router.push(result.destination);
             router.refresh();
         } catch (error) {
             setSubmitError(parseErrorMessage(error));
