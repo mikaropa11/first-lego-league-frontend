@@ -26,6 +26,7 @@ import { getTeamDisplayName } from "@/lib/teamUtils";
 import MediaUploadForm from "@/app/components/media-upload-form";
 import { redirect } from "next/navigation";
 import DeleteEditionButton from "./delete-edition-button";
+import AwardSection from "./_award-section";
 
 
 interface EditionDetailPageProps {
@@ -50,6 +51,10 @@ interface EditionOption {
 function getTeamHref(team: Team): string | null {
     const teamId = getEncodedResourceId(team.uri);
     return teamId ? `/teams/${teamId}` : null;
+}
+
+function getTeamUri(team: Team): string | null {
+    return team.link("self")?.href ?? team.uri ?? null;
 }
 
 function getEditionTitle(edition: Edition | null, id: string) {
@@ -117,17 +122,18 @@ function toAwardCard(award: Award): AwardCard {
     };
 }
 
-function getAwardsByTeamUri(awards: AwardCard[]): Map<string, AwardCard[]> {
+function getAwardsByTeamUri(awards: Award[]): Map<string, AwardCard[]> {
     const awardsByTeamUri = new Map<string, AwardCard[]>();
 
     for (const award of awards) {
-        const teamUri = normalizeUri(award.winnerTeam);
+        const teamUri = normalizeUri(getAwardWinnerTeamUri(award));
         if (!teamUri) {
             continue;
         }
 
+        const awardCard = toAwardCard(award);
         const existingAwards = awardsByTeamUri.get(teamUri) ?? [];
-        existingAwards.push(award);
+        existingAwards.push(awardCard);
         awardsByTeamUri.set(teamUri, existingAwards);
     }
 
@@ -212,7 +218,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
         }
     }
 
-    getAwardsByTeamUri(awards);
+    const awardsByTeamUri = getAwardsByTeamUri(awards);
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
@@ -284,6 +290,8 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                                 <ul className="w-full space-y-3">
                                     {teams.map((team, index) => {
                                         const href = getTeamHref(team);
+                                        const teamUri = normalizeUri(getTeamUri(team));
+                                        const teamAwards = teamUri ? awardsByTeamUri.get(teamUri) ?? [] : [];
 
                                         return (
                                             <li
