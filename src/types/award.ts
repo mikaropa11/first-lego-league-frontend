@@ -10,3 +10,11 @@ export interface AwardEntity {
 }
 
 export type Award = AwardEntity & Resource;
+
+export interface CreateAwardPayload {
+    name: string;
+    title: string;
+    category: string;
+    edition: string;
+    winner: string;
+}

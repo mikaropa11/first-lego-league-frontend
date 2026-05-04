@@ -6,6 +6,8 @@ export interface ScientificProjectEntity {
     edition?: string;
     score?: number;
     comments?: string;
+    startTime?: string;
+    room?: string;
 }
 
 export type ScientificProject = ScientificProjectEntity & Resource;

@@ -113,7 +113,7 @@ export class ConflictError extends ApiError {
  * Utility function to parse error responses from API
  */
 export function parseErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
+  if (error instanceof Error) {
     const msg = error.message;
 
     // Sanitize raw database exception strings
@@ -125,10 +125,6 @@ export function parseErrorMessage(error: unknown): string {
     }
 
     return msg;
-  }
-
-  if (error instanceof Error) {
-    return "An unexpected error occurred. Please try again.";
   }
 
   return "An unexpected error occurred. Please try again.";

@@ -1,0 +1,504 @@
+@layer components {
+  /* Animacion principal visible: barrido de luz en el banner superior. */
+
+  @keyframes teams-hero-scan-pass {
+    0%,
+    16% {
+      transform: translateX(-100%) skewX(-18deg);
+      opacity: 0;
+    }
+
+    30% {
+      opacity: 0.82;
+    }
+
+    74% {
+      transform: translateX(100%) skewX(-18deg);
+      opacity: 0;
+    }
+
+    100% {
+      transform: translateX(100%) skewX(-18deg);
+      opacity: 0;
+    }
+  }
+
+  .teams-page-banner {
+    @apply relative overflow-hidden border border-border px-6 py-8 sm:px-8 sm:py-10;
+
+    isolation: isolate;
+    background:
+      radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 16%, transparent) 0, transparent 34%),
+      linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--card) 88%, var(--secondary) 12%) 0%,
+        var(--card) 58%,
+        color-mix(in srgb, var(--secondary) 72%, white 28%) 100%
+      );
+  }
+
+  .teams-page-banner::after {
+    content: "";
+    @apply pointer-events-none absolute inset-y-0;
+
+    left: 0;
+    width: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, white 58%, var(--primary) 42%) 48%,
+      transparent 100%
+    );
+    filter: blur(1px);
+    opacity: 0;
+    z-index: 0;
+  }
+
+  .teams-page-banner:hover::after {
+    animation: teams-hero-scan-pass 4.5s cubic-bezier(0.22, 1, 0.36, 1) 1;
+  }
+
+  .teams-page-banner .page-banner-grid {
+    @apply relative gap-8;
+
+    z-index: 1;
+  }
+
+  .teams-page-banner .page-title {
+    max-width: 10ch;
+    text-shadow: 0.16rem 0.16rem 0 color-mix(in srgb, var(--primary) 14%, transparent);
+  }
+
+  .teams-page-banner .page-description {
+    max-width: 40rem;
+  }
+
+  .page-panel.teams-page-panel {
+    @apply border-0 bg-transparent p-0;
+  }
+
+  .teams-page-create-button,
+  .teams-page-stat-card,
+  .teams-page-team-card,
+  .teams-page-pagination {
+    clip-path: polygon(0 0, calc(100% - 1rem) 0, 100% 1rem, 100% 100%, 0 100%);
+  }
+
+  .teams-page-create-button {
+    @apply justify-between px-5 py-4 text-left text-sm;
+
+    box-shadow: 12px 12px 0 color-mix(in srgb, var(--primary) 14%, transparent);
+  }
+
+  .teams-page-create-button__label {
+    @apply inline-flex items-center gap-2;
+  }
+
+  .teams-page-create-button svg {
+    transition: transform 220ms ease;
+  }
+
+  .teams-page-create-button:hover svg {
+    transform: translate(0.16rem, -0.16rem);
+  }
+
+  .teams-page-content {
+    @apply space-y-8;
+  }
+
+  .teams-page-stats-grid {
+    @apply grid gap-4 md:grid-cols-3;
+  }
+
+  .teams-page-stat-card {
+    @apply relative overflow-hidden border px-5 py-5 sm:px-6 sm:py-6;
+
+    border-color: color-mix(in srgb, var(--accent) 14%, var(--border));
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--card) 92%, white 8%) 0%, var(--card) 100%);
+    box-shadow: 10px 10px 0 color-mix(in srgb, var(--secondary) 70%, transparent);
+    transition:
+      transform 220ms ease,
+      border-color 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .teams-page-stat-card::before {
+    content: "";
+    @apply absolute inset-x-0 top-0 h-1.5;
+
+    background: var(--accent);
+  }
+
+  .teams-page-stat-card:nth-child(1)::before {
+    background: var(--primary);
+  }
+
+  .teams-page-stat-card:nth-child(2)::before {
+    background: color-mix(in srgb, var(--accent) 78%, var(--foreground));
+  }
+
+  .teams-page-stat-card:nth-child(3)::before {
+    background: color-mix(in srgb, var(--accent) 64%, var(--primary));
+  }
+
+  .teams-page-stat-card:hover {
+    transform: translate(0.2rem, -0.2rem);
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+    box-shadow: 14px 14px 0 color-mix(in srgb, var(--secondary) 88%, transparent);
+  }
+
+  .teams-page-stat-card__inner {
+    @apply relative flex h-full flex-col gap-8;
+
+    z-index: 1;
+  }
+
+  .teams-page-stat-card__header {
+    @apply flex items-start justify-between gap-4;
+  }
+
+  .teams-page-stat-card__copy {
+    @apply space-y-2;
+  }
+
+  .teams-page-stat-card__label {
+    @apply text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-secondary-foreground;
+  }
+
+  .teams-page-stat-card__value {
+    @apply text-4xl font-semibold leading-none tracking-[-0.08em] text-foreground;
+
+    font-variant-numeric: tabular-nums;
+  }
+
+  .teams-page-stat-card__icon {
+    @apply flex size-12 items-center justify-center border text-secondary-foreground;
+
+    border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+    background: color-mix(in srgb, var(--secondary) 72%, white 28%);
+  }
+
+  .teams-page-stat-card__icon svg {
+    @apply size-5;
+  }
+
+  .teams-page-stat-card__description {
+    @apply max-w-[32ch] text-sm leading-6 text-muted-foreground;
+  }
+
+  .teams-page-grid {
+    @apply grid gap-5 xl:grid-cols-2;
+  }
+
+  .teams-page-item {
+    @apply h-full;
+  }
+
+  .teams-page-link {
+    @apply block h-full text-inherit no-underline;
+  }
+
+  .teams-page-link:focus-visible {
+    outline: none;
+  }
+
+  .teams-page-team-card {
+    --team-accent: var(--accent);
+    --team-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+
+    @apply relative flex h-full overflow-hidden border px-5 py-5 sm:px-6 sm:py-6;
+
+    border-color: color-mix(in srgb, var(--team-accent) 16%, var(--border));
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--card) 94%, white 6%) 0%, var(--card) 100%),
+      linear-gradient(120deg, transparent 0%, color-mix(in srgb, var(--team-accent) 14%, transparent) 47%, transparent 60%);
+    background-size:
+      100% 100%,
+      220% 100%;
+    background-position:
+      0 0,
+      150% 0;
+    box-shadow: 12px 12px 0 color-mix(in srgb, var(--secondary) 72%, transparent);
+    transition:
+      transform 220ms ease,
+      border-color 220ms ease,
+      box-shadow 220ms ease,
+      background 220ms ease,
+      background-position 560ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .teams-page-team-card::before {
+    content: "";
+    @apply absolute inset-y-0 left-0 w-2;
+
+    background: var(--team-accent);
+  }
+
+  .teams-page-team-card::after {
+    content: "";
+    @apply pointer-events-none absolute right-4 top-4 h-16 w-16;
+
+    border-right: 1px solid color-mix(in srgb, var(--team-accent) 20%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--team-accent) 20%, transparent);
+  }
+
+  .teams-page-team-card[data-category="challenge"] {
+    --team-accent: var(--primary);
+  }
+
+  .teams-page-team-card[data-category="explore"] {
+    --team-accent: var(--accent);
+  }
+
+  .teams-page-team-card[data-category="unknown"] {
+    --team-accent: color-mix(in srgb, var(--foreground) 38%, var(--secondary-foreground));
+  }
+
+  .teams-page-link:hover .teams-page-team-card {
+    transform: translate(0.28rem, -0.28rem);
+    border-color: color-mix(in srgb, var(--team-accent) 40%, var(--border));
+    box-shadow: 16px 16px 0 var(--team-soft);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--team-accent) 4%, var(--card)) 0%, var(--card) 100%),
+      linear-gradient(120deg, transparent 0%, color-mix(in srgb, var(--team-accent) 18%, transparent) 47%, transparent 60%);
+    background-position:
+      0 0,
+      -30% 0;
+  }
+
+  .teams-page-link:focus-visible .teams-page-team-card {
+    border-color: var(--team-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--team-accent) 24%, transparent);
+  }
+
+  .teams-page-team-card__body {
+    @apply relative flex h-full w-full flex-col gap-5;
+
+    z-index: 1;
+  }
+
+  .teams-page-team-card__masthead {
+    @apply flex flex-wrap items-start justify-between gap-3;
+  }
+
+  .teams-page-team-card__serial {
+    @apply text-[0.72rem] font-semibold uppercase tracking-[0.18em];
+
+    color: var(--team-accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .teams-page-team-card__division {
+    @apply inline-flex items-center border px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.16em];
+
+    border-color: color-mix(in srgb, var(--team-accent) 22%, transparent);
+    background: color-mix(in srgb, var(--team-accent) 10%, transparent);
+    color: var(--team-accent);
+  }
+
+  .teams-page-team-card__header {
+    @apply space-y-3;
+  }
+
+  .teams-page-team-card__identity {
+    @apply min-w-0 space-y-3;
+  }
+
+  .teams-page-team-card__kicker {
+    @apply text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-secondary-foreground;
+  }
+
+  .teams-page-team-card__title {
+    @apply text-3xl font-semibold leading-tight tracking-[-0.05em] text-foreground;
+  }
+
+  .teams-page-team-card__facts {
+    @apply grid gap-3 border-y py-4 sm:grid-cols-3;
+
+    border-color: color-mix(in srgb, var(--team-accent) 16%, var(--border));
+  }
+
+  .teams-page-team-card__fact {
+    @apply min-w-0 border-l pl-3;
+
+    border-color: color-mix(in srgb, var(--team-accent) 24%, transparent);
+  }
+
+  .teams-page-team-card__fact-label {
+    @apply text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-secondary-foreground;
+  }
+
+  .teams-page-team-card__fact-value {
+    @apply mt-2 text-sm font-medium leading-6 text-foreground;
+  }
+
+  .teams-page-team-card__center {
+    @apply relative overflow-hidden border px-4 py-4;
+
+    border-color: color-mix(in srgb, var(--team-accent) 20%, var(--border));
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--team-accent) 8%, transparent) 0%, transparent 100%);
+  }
+
+  .teams-page-team-card__center::before {
+    content: "";
+    @apply absolute inset-y-0 left-0 w-1.5;
+
+    background: color-mix(in srgb, var(--team-accent) 76%, white 24%);
+  }
+
+  .teams-page-team-card__center-label {
+    @apply pl-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-secondary-foreground;
+  }
+
+  .teams-page-team-card__center-copy {
+    @apply mt-2 pl-2 text-base leading-7 text-foreground;
+  }
+
+  .teams-page-team-card__footer {
+    @apply mt-auto flex items-center justify-between gap-4 border-t pt-4;
+
+    border-color: color-mix(in srgb, var(--team-accent) 16%, var(--border));
+  }
+
+  .teams-page-team-card__action {
+    @apply inline-flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.16em];
+
+    transition:
+      gap 220ms ease,
+      color 220ms ease;
+  }
+
+  .teams-page-team-card__action svg {
+    @apply size-4;
+  }
+
+  .teams-page-team-card__action--interactive {
+    color: var(--team-accent);
+  }
+
+  .teams-page-team-card__action--disabled {
+    color: var(--muted-foreground);
+  }
+
+  .teams-page-link:hover .teams-page-team-card__action--interactive {
+    gap: 0.8rem;
+  }
+
+  .teams-page-pagination {
+    @apply px-1 pt-1;
+
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .pagination-controls--editorial {
+    @apply grid grid-cols-2 gap-3 border-t pt-5;
+
+    border-color: color-mix(in srgb, var(--accent) 16%, var(--border));
+  }
+
+  .pagination-controls__edge {
+    @apply flex;
+  }
+
+  .pagination-controls__edge--next {
+    @apply justify-end;
+  }
+
+  .pagination-controls__button {
+    @apply h-auto min-h-11 w-full justify-between px-4 py-3 text-sm font-medium normal-case tracking-[0.01em];
+
+    border-color: color-mix(in srgb, var(--accent) 14%, var(--border));
+    background: color-mix(in srgb, var(--card) 96%, var(--secondary) 4%);
+    box-shadow: none;
+  }
+
+  .pagination-controls__summary {
+    @apply relative col-span-2 overflow-hidden border px-5 py-4 text-center;
+
+    border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--card) 96%, var(--secondary) 4%) 0%, var(--card) 100%);
+    order: -1;
+  }
+
+  .pagination-controls__summary::before {
+    content: "";
+    @apply absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2;
+
+    background: linear-gradient(90deg, var(--primary) 0, var(--accent) 100%);
+  }
+
+  .pagination-controls__eyebrow {
+    @apply text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-secondary-foreground;
+  }
+
+  .pagination-controls__page-line {
+    @apply flex items-end justify-center gap-3;
+  }
+
+  .pagination-controls__page-word {
+    @apply text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground;
+  }
+
+  .pagination-controls__page-number {
+    @apply text-3xl font-semibold leading-none tracking-[-0.08em] text-foreground;
+
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pagination-controls__helper {
+    @apply mt-3 max-w-[24ch] text-sm leading-6 text-muted-foreground;
+
+    margin-inline: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .teams-page-banner::after {
+      animation: none;
+    }
+
+    .teams-page-banner:hover::after {
+      animation: none;
+    }
+
+    .teams-page-create-button svg,
+    .teams-page-team-card,
+    .teams-page-team-card__action {
+      transition-duration: 0.01ms;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .teams-page-banner .page-title {
+      max-width: 12ch;
+    }
+
+    .teams-page-roster-intro__count {
+      @apply min-w-0 border-l-0 pl-0;
+    }
+
+    .teams-page-team-card__title {
+      max-width: none;
+    }
+
+    .pagination-controls__button {
+      @apply w-full;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .pagination-controls--editorial {
+      @apply grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center;
+    }
+
+    .pagination-controls__summary {
+      @apply col-auto min-w-[11rem] px-6;
+
+      order: 0;
+    }
+  }
+}

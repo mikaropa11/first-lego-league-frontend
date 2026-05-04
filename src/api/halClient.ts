@@ -239,7 +239,21 @@ async function executeHalRequest(config: {
     authProvider: { getAuth: () => Promise<string | null> };
     body?: HalRequestBody;
 }): Promise<Resource | null> {
-    const url = config.path.startsWith("http") ? config.path : `${API_BASE_URL}${config.path}`;
+    let path = config.path;
+    
+    if (path.startsWith("http")) {
+        try {
+            const url = new URL(path);
+            const baseUrl = new URL(API_BASE_URL);
+            if (url.hostname === baseUrl.hostname) {
+                path = url.pathname + url.search;
+            }
+        } catch (e) {
+            // If URL parsing fails, fallback to original path
+        }
+    }
+
+    const url = path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
     const authorization = await config.authProvider.getAuth();
     
     const headers: HeadersInit = {

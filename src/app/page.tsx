@@ -1,12 +1,23 @@
+"use client";
+
 import PageShell from "@/app/components/page-shell";
 import Link from "next/link";
+import { useAuth } from "@/app/components/authentication"; // Importamos el hook de auth
 
 export default function Home() {
-  const coreModules = [
+  const { user } = useAuth(); // Obtenemos el usuario actual
+
+  // Definimos todos los módulos posibles
+  const allModules = [
     {
       href: "/teams",
       title: "Teams",
       description: "Participating teams and details.",
+    },
+    {
+      href: "/volunteers",
+      title: "Volunteers",
+      description: "Volunteer management.",
     },
     {
       href: "/matches",
@@ -17,8 +28,28 @@ export default function Home() {
       href: "/scientific-projects",
       title: "Scientific Projects",
       description: "Innovation projects by edition.",
+    },
+    {
+      href: "/project-rooms",
+      title: "Project Rooms",
+      description: "Judging rooms, panels and assigned projects.",
+    },
+    {
+      href: "/competition-tables",
+      title: "Competition Tables",
+      description: "Match tables and referee assignments.",
+    },
+    {
+      href: "/administrators",
+      title: "Administrators",
+      description: "User role management.",
+      roles: ["ROLE_ADMIN"], 
     }
   ];
+
+  const visibleModules = allModules.filter((module) => 
+    !module.roles || user?.authorities?.some(auth => module.roles?.includes(auth.authority))
+  );
 
   return (
     <PageShell
@@ -36,7 +67,7 @@ export default function Home() {
         </div>
 
         <div className="module-grid">
-          {coreModules.map((module) => (
+          {visibleModules.map((module) => (
             <Link key={module.href} href={module.href} className="module-card">
               <h2 className="module-title">{module.title}</h2>
               <p className="module-copy">{module.description}</p>

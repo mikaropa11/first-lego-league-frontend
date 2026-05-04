@@ -3,6 +3,7 @@ import PageShell from "@/app/components/page-shell";
 import ErrorAlert from "@/app/components/error-alert";
 import EmptyState from "@/app/components/empty-state";
 import PaginationControls from "@/app/components/pagination-controls";
+import SearchInput from "@/app/components/search-input";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { User } from "@/types/user";
 import { parseErrorMessage } from "@/types/errors";
@@ -14,12 +15,13 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 5;
 
 interface UsersPageProps {
-    readonly searchParams?: Promise<{ page?: string }>;
+    readonly searchParams?: Promise<{ page?: string; search?: string }>;
 }
 
 export default async function UsersPage(props: Readonly<UsersPageProps>) {
     const searchParams = (await props.searchParams) ?? {};
     const urlPage = Math.max(1, Number(searchParams.page ?? "1") || 1);
+    const search = searchParams.search?.trim().toLowerCase() ?? "";
 
     const service = new UsersService(serverAuthProvider);
     let result: HalPage<User> = { items: [], hasNext: false, hasPrev: false, currentPage: 0 };
@@ -32,7 +34,13 @@ export default async function UsersPage(props: Readonly<UsersPageProps>) {
         error = parseErrorMessage(e);
     }
 
-    const users = result.items;
+    const users = search
+        ? result.items.filter(
+            (u) =>
+                u.username?.toLowerCase().includes(search) ||
+                u.email?.toLowerCase().includes(search)
+        )
+        : result.items;
 
     return (
         <PageShell
@@ -45,16 +53,22 @@ export default async function UsersPage(props: Readonly<UsersPageProps>) {
                     <div className="page-eyebrow">Registered users</div>
                     <h2 className="section-title">Directory</h2>
                     <p className="section-copy max-w-3xl">
-                        Select a user to view profile details and related records.
+                        Select a user to view profile details.
                     </p>
                 </div>
+
+                <SearchInput defaultValue={searchParams.search ?? ""} placeholder="Search by username or email…" />
 
                 {error && <ErrorAlert message={error} />}
 
                 {!error && users.length === 0 && (
                     <EmptyState
                         title="No users found"
-                        description="There are currently no registered users in the system."
+                        description={
+                            search
+                                ? `No users match "${searchParams.search}".`
+                                : "There are currently no registered users in the system."
+                        }
                     />
                 )}
 
@@ -81,6 +95,7 @@ export default async function UsersPage(props: Readonly<UsersPageProps>) {
                             hasNext={result.hasNext}
                             hasPrev={result.hasPrev}
                             basePath="/users"
+                            searchQuery={searchParams.search}
                         />
                     </>
                 )}

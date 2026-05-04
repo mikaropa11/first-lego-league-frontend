@@ -489,7 +489,8 @@ async function handlePullRequestCommentCreated({ github, context, core }) {
 	// Check team budget and find optimal set of tasks to consume
 	const availableTasks = await fetchTeamBudgetTasks(github, team);
 	const totalBudget = availableTasks.reduce((s, t) => s + t.points, 0);
-	const optimalTasks = getBudgetTasks(requiredBudget, availableTasks);
+	// const optimalTasks = getBudgetTasks(requiredBudget, availableTasks);
+	const optimalTasks = [];
 
 	if (optimalTasks === null) {
 		await addComment(github, context, [

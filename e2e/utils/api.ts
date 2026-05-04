@@ -1,5 +1,5 @@
 import { APIRequestContext, expect } from "@playwright/test";
-import { TestTeam, TestUser } from "./test-data";
+import { TestEdition, TestMedia, TestTeam, TestUser } from "./test-data";
 
 type BasicAuthCredentials = Pick<TestUser, "username" | "password">;
 const ALLOWED_WRITE_HOSTS = new Set(["localhost", "127.0.0.1", "api.firstlegoleague.win"]);
@@ -119,6 +119,57 @@ export async function createTeamViaApi(
             category: team.category,
             foundationYear: team.foundationYear,
             educationalCenter: team.educationalCenter,
+        },
+    });
+
+    expect(response.status(), await response.text()).toBe(201);
+}
+
+export async function createEditionViaApi(
+    request: APIRequestContext,
+    edition: TestEdition
+) {
+    const baseUrl = getApiBaseUrl();
+    const adminUser = getAdminTestUser();
+
+    assertSafeWriteTarget(baseUrl);
+    const response = await request.post(`${baseUrl}/editions`, {
+        headers: {
+            Accept: "application/hal+json",
+            "Content-Type": "application/json",
+            Authorization: getBasicAuthHeader(adminUser),
+        },
+        data: edition,
+    });
+
+    expect(response.status(), await response.text()).toBe(201);
+
+    const body = await response.json();
+    const selfHref = body._links?.self?.href;
+    expect(typeof selfHref, JSON.stringify(body)).toBe("string");
+
+    return selfHref as string;
+}
+
+export async function createMediaViaApi(
+    request: APIRequestContext,
+    media: TestMedia,
+    editionUri: string
+) {
+    const baseUrl = getApiBaseUrl();
+    const adminUser = getAdminTestUser();
+
+    assertSafeWriteTarget(baseUrl);
+    const response = await request.post(`${baseUrl}/mediaContents`, {
+        headers: {
+            Accept: "application/hal+json",
+            "Content-Type": "application/json",
+            Authorization: getBasicAuthHeader(adminUser),
+        },
+        data: {
+            url: media.url,
+            type: media.type,
+            edition: editionUri,
         },
     });
 

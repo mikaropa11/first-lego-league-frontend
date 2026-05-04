@@ -25,6 +25,8 @@ import {
     fetchHalCollection,
     fetchHalPagedCollection,
     fetchHalResource,
+    putHal,
+    updateHalResource,
 } from "./halClient";
 
 function getSafeEncodedId(id: string): string {
@@ -43,8 +45,16 @@ export interface AddMemberPayload {
     tShirtSize: string;
 }
 
+export interface UpdateMemberPayload {
+    name: string;
+    birthDate: string;
+    gender: TeamMemberGender;
+    tShirtSize: string;
+    role: string;
+}
+
 export class TeamsService {
-    constructor(private readonly authStrategy: AuthStrategy) {}
+    constructor(private readonly authStrategy: AuthStrategy) { }
 
     async getTeams(): Promise<Team[]> {
         return fetchHalCollection<Team>("/teams", this.authStrategy, "teams");
@@ -222,6 +232,11 @@ export class TeamsService {
                 );
         }
     }
+
+    async updateTeamMember(memberUri: string, data: UpdateMemberPayload): Promise<void> {
+        await putHal(memberUri, data as unknown as Record<string, unknown>, this.authStrategy);
+    }
+
     async deleteTeam(id: string): Promise<void> {
         const teamId = getSafeEncodedId(id);
         await deleteHal(`/teams/${teamId}`, this.authStrategy);

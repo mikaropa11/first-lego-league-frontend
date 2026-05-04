@@ -12,8 +12,7 @@ export type CreateUserPayload = {
 };
 
 export class UsersService {
-    constructor(private readonly authStrategy: AuthStrategy) {
-    }
+    constructor(private readonly authStrategy: AuthStrategy) { }
 
     async getUsers(): Promise<User[]> {
         return fetchHalCollection<User>('/users', this.authStrategy, 'users');
@@ -29,38 +28,34 @@ export class UsersService {
     }
 
     async getCurrentUser(): Promise<User | null> {
-        if (!await this.authStrategy.getAuth()) {
-            return null;
+        const auth = await this.authStrategy.getAuth();
+        if (!auth) return null;
+        try {
+            return await fetchHalResource<User>('/identity', this.authStrategy);
+        } catch (error: unknown) {
+            const apiError = error as { statusCode?: number; status?: number };
+            
+            if (apiError?.statusCode === 401 || apiError?.status === 401) {
+                return null;
+            }
+            throw error;
         }
-        return fetchHalResource<User>('/identity', this.authStrategy);
     }
 
     async createUser(user: CreateUserPayload): Promise<User> {
-        const payload = {
-            id: user.username,
-            email: user.email,
-            password: user.password,
-        };
-
+        const payload = { id: user.username, email: user.email, password: user.password };
         return createHalResource<User>('/users', payload, this.authStrategy, 'user');
     }
 
     async createAdministrator(user: CreateUserPayload): Promise<User> {
-        const payload = {
-            id: user.username,
-            email: user.email,
-            password: user.password,
-        };
-
+        const payload = { id: user.username, email: user.email, password: user.password };
         return createHalResource<User>('/administrators', payload, this.authStrategy, 'administrator');
     }
 
     async patchUser(id: string, data: Partial<Pick<User, 'email' | 'password'>>): Promise<User> {
         const userId = encodeURIComponent(id);
         const resource = await patchHal(`/users/${userId}`, data as Resource, this.authStrategy);
-        if (!resource) {
-            throw new ApiError('No response from server after update', 500, true);
-        }
+        if (!resource) throw new ApiError('No response from server', 500, true);
         return mergeHal<User>(resource);
     }
 

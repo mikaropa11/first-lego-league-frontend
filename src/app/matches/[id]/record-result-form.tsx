@@ -7,7 +7,7 @@ import { parseErrorMessage } from "@/types/errors";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { registerMatchResult } from "./actions";
+import { registerMatchResult, updateMatchResultScores } from "./actions";
 
 type FormValues = {
     teamAScore: number;
@@ -20,10 +20,16 @@ interface RecordResultFormProps {
     readonly teamBId: string;
     readonly teamAName: string;
     readonly teamBName: string;
+    readonly mode?: "create" | "edit";
+    readonly initialTeamAScore?: number;
+    readonly initialTeamBScore?: number;
+    readonly teamAResultUri?: string;
+    readonly teamBResultUri?: string;
 }
 
 function FieldError({ id, message }: Readonly<{ id: string; message?: string }>) {
     if (!message) return null;
+
     return (
         <p id={id} className="text-sm text-destructive" role="alert">
             {message}
@@ -37,6 +43,11 @@ export default function RecordResultForm({
     teamBId,
     teamAName,
     teamBName,
+    mode = "create",
+    initialTeamAScore,
+    initialTeamBScore,
+    teamAResultUri,
+    teamBResultUri,
 }: RecordResultFormProps) {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -46,22 +57,61 @@ export default function RecordResultForm({
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
-    } = useForm<FormValues>();
+    } = useForm<FormValues>({
+        defaultValues: {
+            teamAScore: initialTeamAScore,
+            teamBScore: initialTeamBScore,
+        },
+    });
+
+    const isEditMode = mode === "edit";
 
     const onSubmit: SubmitHandler<FormValues> = async (data) => {
         setSubmitError(null);
         setSuccess(false);
 
+        const teamAScore = Number(data.teamAScore);
+        const teamBScore = Number(data.teamBScore);
+
         try {
+        if (isEditMode) {
+            if (!teamAResultUri || !teamBResultUri) {
+                throw new Error("Cannot update result because result links are missing.");
+            }
+
+            if (
+                initialTeamAScore === undefined ||
+                initialTeamBScore === undefined ||
+                !Number.isInteger(initialTeamAScore) ||
+                !Number.isInteger(initialTeamBScore)
+            ) {
+                throw new Error("Cannot update result because previous scores are missing.");
+            }
+
+            await updateMatchResultScores({
+                teamAResultUri,
+                teamBResultUri,
+                previousTeamAScore: initialTeamAScore,
+                previousTeamBScore: initialTeamBScore,
+                teamAScore,
+                teamBScore,
+            });
+
+            setSuccess(true);
+            router.refresh();
+            return;
+        }
+
             await registerMatchResult({
                 matchId,
                 score: {
                     teamAId,
                     teamBId,
-                    teamAScore: Number(data.teamAScore),
-                    teamBScore: Number(data.teamBScore),
+                    teamAScore,
+                    teamBScore,
                 },
             });
+
             setSuccess(true);
             router.refresh();
         } catch (error) {
@@ -88,7 +138,7 @@ export default function RecordResultForm({
                         role="status"
                         aria-live="polite"
                     >
-                        Result recorded successfully.
+                        {isEditMode ? "Result updated successfully." : "Result recorded successfully."}
                     </p>
                 )}
 
@@ -99,6 +149,7 @@ export default function RecordResultForm({
                             id="teamAScore"
                             type="number"
                             min={0}
+                            step={1}
                             aria-invalid={!!errors.teamAScore}
                             aria-describedby={errors.teamAScore ? "team-a-score-error" : undefined}
                             {...register("teamAScore", {
@@ -116,6 +167,7 @@ export default function RecordResultForm({
                             id="teamBScore"
                             type="number"
                             min={0}
+                            step={1}
                             aria-invalid={!!errors.teamBScore}
                             aria-describedby={errors.teamBScore ? "team-b-score-error" : undefined}
                             {...register("teamBScore", {
@@ -129,7 +181,13 @@ export default function RecordResultForm({
                 </div>
 
                 <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-                    {isSubmitting ? "Submitting..." : "Submit result"}
+                    {isSubmitting
+                        ? isEditMode
+                            ? "Updating..."
+                            : "Submitting..."
+                        : isEditMode
+                          ? "Update result"
+                          : "Submit result"}
                 </Button>
             </div>
         </form>

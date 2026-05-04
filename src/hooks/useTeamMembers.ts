@@ -1,8 +1,9 @@
 'use client';
-import { TeamsService } from '@/api/teamApi';
+import { TeamsService, UpdateMemberPayload } from '@/api/teamApi';
 import { clientAuthProvider } from '@/lib/authProvider';
 import { MAX_TEAM_MEMBERS, TeamMember, TeamMemberGender, TeamMemberSnapshot } from '@/types/team';
 import { useCallback, useMemo, useState } from 'react';
+import { updateTeamMember as updateTeamMemberAction } from '@/app/teams/[id]/actions';
 
 function hasHalSelfLink(member: TeamMember | TeamMemberSnapshot): member is TeamMember {
     return "link" in member && typeof member.link === "function";
@@ -76,12 +77,34 @@ export function useTeamMembers(teamId: string, initialMembers: TeamMemberSnapsho
         []
     );
 
+    const updateMember = useCallback(
+        async (memberUri: string, data: UpdateMemberPayload): Promise<boolean> => {
+            if (!memberUri) return false;
+            setIsLoading(true);
+            setError(null);
+            try {
+                await updateTeamMemberAction(teamId, memberUri, data);
+                setMembers(prev =>
+                    prev.map(m => m.uri === memberUri ? { ...m, ...data } : m)
+                );
+                return true;
+            } catch {
+                setError('Failed to update member');
+                return false;
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [teamId]
+    );
+
     return {
         members: members ?? [],
         isLoading,
         error,
         addMember,
         removeMember,
+        updateMember,
         isFull: (members ?? []).length >= MAX_TEAM_MEMBERS,
     };
 }

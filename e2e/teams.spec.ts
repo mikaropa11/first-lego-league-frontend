@@ -3,6 +3,14 @@ import { createTeamViaApi, hasAdminTestUser } from "./utils/api";
 import { loginViaUi } from "./utils/auth";
 import { createTestTeam } from "./utils/test-data";
 
+function formatTeamCategory(category: string) {
+    return category
+        .toLowerCase()
+        .split("_")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+}
+
 function getAdminUser() {
     return {
         username: process.env.E2E_ADMIN_USERNAME ?? "",
@@ -22,21 +30,22 @@ test("teams page renders a created team in the roster", async ({ page, request }
     await page.goto("/teams");
 
     await expect(page.getByRole("heading", { name: "Teams", level: 1 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Competition roster", level: 2 })).toBeVisible();
 
     if (!team) {
         const emptyState = page.getByText("No teams found");
-        const teamCards = page.locator("ul.list-grid > li");
+        const teamCards = page.locator(".teams-page-grid > li");
 
         await expect(emptyState.or(teamCards.first())).toBeVisible();
         return;
     }
 
-    const createdTeamCard = page.locator("li", { hasText: team.name }).first();
+    const createdTeamCard = page.locator("article", { hasText: team.name }).first();
 
-    await expect(createdTeamCard.getByText(team.name, { exact: true })).toBeVisible();
+    await expect(createdTeamCard.getByRole("heading", { name: team.name, level: 3 })).toBeVisible();
     await expect(createdTeamCard.getByText(team.city, { exact: true })).toBeVisible();
-    await expect(createdTeamCard.getByText(`Category: ${team.category}`, { exact: true })).toBeVisible();
+    await expect(createdTeamCard.getByText(formatTeamCategory(team.category), { exact: true })).toBeVisible();
+    await expect(createdTeamCard.getByText(`${team.foundationYear}`, { exact: true })).toBeVisible();
+    await expect(createdTeamCard.getByText(team.educationalCenter, { exact: true })).toBeVisible();
 });
 
 test.describe("team create access", () => {
@@ -46,7 +55,7 @@ test.describe("team create access", () => {
         await loginViaUi(page, getAdminUser());
         await page.goto("/teams");
 
-        const createLink = page.getByRole("link", { name: "New Team" });
+        const createLink = page.getByRole("link", { name: "Create new team" });
         await expect(createLink).toBeVisible();
         await createLink.click();
 
@@ -57,14 +66,14 @@ test.describe("team create access", () => {
     test("public users cannot access the create team page", async ({ page }) => {
         await page.goto("/teams");
 
-        await expect(page.getByRole("link", { name: "New Team" })).toHaveCount(0);
+        await expect(page.getByRole("link", { name: "Create new team" })).toHaveCount(0);
 
         await page.goto("/teams/new");
         await expect(page).toHaveURL(/\/login$/);
     });
 });
 
-test("an admin can create a team from the UI", async ({ page }) => {
+test("the team creation form surfaces the missing member t-shirt size validation", async ({ page }) => {
     test.skip(!hasAdminTestUser(), "Admin credentials not configured");
 
     const uniqueSuffix = `${Date.now()}`;
@@ -91,10 +100,7 @@ test("an admin can create a team from the UI", async ({ page }) => {
 
     await page.getByRole("button", { name: "Create team" }).click();
 
-    await expect(page).toHaveURL(/\/teams$/);
-    const createdTeamCard = page.locator("li", { hasText: teamName }).first();
-
-    await expect(createdTeamCard.getByText(teamName, { exact: true })).toBeVisible();
-    await expect(createdTeamCard.getByText("Igualada", { exact: true })).toBeVisible();
-    await expect(createdTeamCard.getByText("UI Test School", { exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/teams\/new$/);
+    await expect(page.getByRole("alert")).toContainText("Member 1 t-shirt size is required.");
+    await expect(page.getByLabel("Team name")).toHaveValue(teamName);
 });

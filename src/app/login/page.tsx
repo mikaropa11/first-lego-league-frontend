@@ -49,6 +49,11 @@ export default function LoginPage() {
         localStorage.setItem(AUTH_COOKIE_NAME, authorization);
         const service = new UsersService(clientAuthProvider);
         const user = await service.getCurrentUser();
+    
+        if (!user) {
+            throw new AuthenticationError("Unauthorized", 401);
+        }
+        
         setUser(user);
     }
 
