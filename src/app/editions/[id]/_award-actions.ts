@@ -37,7 +37,7 @@ export async function updateAward(awardUri: string, editionId: string, formData:
         }
 
         if (!edition) {
-            return { success: false, error: "An edition must be selected." };
+            return { success: false, error: "Award edition is required." };
         }
 
         const service = new AwardsService(serverAuthProvider);

@@ -5,7 +5,7 @@ import ErrorAlert from "@/app/components/error-alert";
 import { Input } from "@/app/components/input";
 import { Label } from "@/app/components/label";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { type FormEvent, startTransition, useEffect, useId, useRef, useState } from "react";
 import { updateAward } from "./_award-actions";
 
 interface AwardSectionProps {
@@ -34,10 +34,6 @@ function getEditionLabel(edition: AwardSectionProps["editions"][number]): string
     return edition.venueName ? `${year} - ${edition.venueName}` : year;
 }
 
-function getEditionValue(edition: AwardSectionProps["editions"][number]): string {
-    return edition.uri ?? "";
-}
-
 function getAwardEditionLabel(award: AwardSectionProps["award"], editions: AwardSectionProps["editions"]): string {
     const editionValue = award.edition?.trim();
 
@@ -45,7 +41,7 @@ function getAwardEditionLabel(award: AwardSectionProps["award"], editions: Award
         return "No edition selected";
     }
 
-    const match = editions.find((edition) => getEditionValue(edition) === editionValue);
+    const match = editions.find((edition) => edition.uri === editionValue);
     return match ? getEditionLabel(match) : editionValue;
 }
 
@@ -59,16 +55,19 @@ export default function AwardSection({
     const dialogRef = useRef<HTMLDialogElement>(null);
     const titleId = useId();
     const resourceUri = award.resourceUri;
+    const [displayAward, setDisplayAward] = useState(award);
 
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [name, setName] = useState(award.name ?? "");
     const [title, setTitle] = useState(award.title ?? "");
     const [category, setCategory] = useState(award.category ?? "");
-    const [edition, setEdition] = useState(award.edition ?? "");
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const hasEditionOption = editions.some((item) => getEditionValue(item) === edition);
+
+    useEffect(() => {
+        setDisplayAward(award);
+    }, [award]);
 
     useEffect(() => {
         const dialog = dialogRef.current;
@@ -90,10 +89,9 @@ export default function AwardSection({
     }, [isEditing]);
 
     function openEditor() {
-        setName(award.name ?? "");
-        setTitle(award.title ?? "");
-        setCategory(award.category ?? "");
-        setEdition(award.edition ?? "");
+        setName(displayAward.name ?? "");
+        setTitle(displayAward.title ?? "");
+        setCategory(displayAward.category ?? "");
         setErrorMessage(null);
         setSuccessMessage(null);
         setIsEditing(true);
@@ -124,9 +122,17 @@ export default function AwardSection({
                 return;
             }
 
+            setDisplayAward((current) => ({
+                ...current,
+                name,
+                title,
+                category,
+            }));
             setIsEditing(false);
             setSuccessMessage("Award updated successfully.");
-            window.setTimeout(() => router.refresh(), 400);
+            startTransition(() => {
+                router.refresh();
+            });
         } catch (error) {
             setErrorMessage(error instanceof Error ? error.message : "An unexpected error occurred.");
         } finally {
@@ -139,23 +145,23 @@ export default function AwardSection({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-1">
                     <h4 className="text-sm font-semibold text-foreground">
-                        {getAwardLabel(award)}
+                        {getAwardLabel(displayAward)}
                     </h4>
 
-                    {award.title && (
+                    {displayAward.title && (
                         <p className="text-sm text-muted-foreground">
-                            Title: {award.title}
+                            Title: {displayAward.title}
                         </p>
                     )}
 
-                    {award.category && (
+                    {displayAward.category && (
                         <p className="text-sm text-muted-foreground">
-                            Category: {award.category}
+                            Category: {displayAward.category}
                         </p>
                     )}
 
                     <p className="text-xs text-muted-foreground">
-                        Edition: {getAwardEditionLabel(award, editions)}
+                        Edition: {getAwardEditionLabel(displayAward, editions)}
                     </p>
                 </div>
 
@@ -191,7 +197,7 @@ export default function AwardSection({
                                     Edit award
                                 </h3>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Update the award details and reassign it to another edition if needed.
+                                    Update the award details for this team.
                                 </p>
                             </div>
 
@@ -214,57 +220,30 @@ export default function AwardSection({
                                 />
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor={`${titleId}-title`}>Title</Label>
-                                <Input
-                                    id={`${titleId}-title`}
-                                    name="title"
-                                    value={title}
-                                    onChange={(event) => setTitle(event.target.value)}
-                                />
-                            </div>
+                            <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor={`${titleId}-title`}>Title</Label>
+                                    <Input
+                                        id={`${titleId}-title`}
+                                        name="title"
+                                        value={title}
+                                        onChange={(event) => setTitle(event.target.value)}
+                                    />
+                                </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor={`${titleId}-category`}>Category</Label>
-                                <Input
-                                    id={`${titleId}-category`}
-                                    name="category"
-                                    value={category}
-                                    onChange={(event) => setCategory(event.target.value)}
-                                />
-                            </div>
-
-                            <div className="grid gap-2 sm:col-span-2">
-                                <Label htmlFor={`${titleId}-edition`}>Edition</Label>
-                                <select
-                                    id={`${titleId}-edition`}
-                                    name="edition"
-                                    value={edition}
-                                    onChange={(event) => setEdition(event.target.value)}
-                                    className="border-input h-11 w-full border bg-card px-4 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/35 focus-visible:ring-[3px]"
-                                    required
-                                    disabled={editions.length === 0}
-                                >
-                                    <option value="">
-                                        {editions.length === 0 ? "Editions unavailable" : "Select an edition"}
-                                    </option>
-                                    {!hasEditionOption && edition && (
-                                        <option value={edition}>
-                                            {getAwardEditionLabel(award, editions)}
-                                        </option>
-                                    )}
-                                    {editions.map((item) => {
-                                        const value = getEditionValue(item);
-
-                                        return (
-                                            <option key={value} value={value}>
-                                                {getEditionLabel(item)}
-                                            </option>
-                                        );
-                                    })}
-                                </select>
+                                <div className="grid gap-2">
+                                    <Label htmlFor={`${titleId}-category`}>Category</Label>
+                                    <Input
+                                        id={`${titleId}-category`}
+                                        name="category"
+                                        value={category}
+                                        onChange={(event) => setCategory(event.target.value)}
+                                    />
+                                </div>
                             </div>
                         </div>
+
+                        <input type="hidden" name="edition" value={displayAward.edition ?? ""} />
 
                         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                             <Button
