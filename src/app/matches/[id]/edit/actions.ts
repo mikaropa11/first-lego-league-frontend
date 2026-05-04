@@ -7,7 +7,11 @@ import { isAdmin } from "@/lib/authz";
 import { AuthenticationError, parseErrorMessage } from "@/types/errors";
 import { validateMatchPayload } from "../../match-form-validation";
 
-export async function updateMatch(matchId: string, data: UpdateMatchPayload) {
+type UpdateMatchResult =
+    | { ok: true; destination: string }
+    | { ok: false; error: string };
+
+export async function updateMatch(matchId: string, data: UpdateMatchPayload): Promise<UpdateMatchResult> {
     try {
         const auth = await serverAuthProvider.getAuth();
         if (!auth) {
@@ -25,8 +29,8 @@ export async function updateMatch(matchId: string, data: UpdateMatchPayload) {
             validateMatchPayload(data),
         );
 
-        return { destination: `/matches/${matchId}` };
+        return { ok: true, destination: `/matches/${matchId}` };
     } catch (error) {
-        return { error: parseErrorMessage(error) };
+        return { ok: false, error: parseErrorMessage(error) };
     }
 }
