@@ -5,11 +5,10 @@ import { UsersService } from "@/api/userApi";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
 import { AuthenticationError, parseErrorMessage } from "@/types/errors";
+import { redirect } from "next/navigation";
 import { validateMatchPayload } from "../../match-form-validation";
 
-type UpdateMatchResult =
-    | { ok: true; destination: string }
-    | { ok: false; error: string };
+type UpdateMatchResult = { ok: false; error: string };
 
 export async function updateMatch(matchId: string, data: CreateMatchPayload): Promise<UpdateMatchResult> {
     try {
@@ -28,9 +27,9 @@ export async function updateMatch(matchId: string, data: CreateMatchPayload): Pr
             matchId,
             validateMatchPayload(data),
         );
-
-        return { ok: true, destination: `/matches/${matchId}` };
     } catch (error) {
         return { ok: false, error: parseErrorMessage(error) };
     }
+
+    redirect(`/matches/${matchId}`);
 }
