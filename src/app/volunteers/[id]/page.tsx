@@ -19,6 +19,47 @@ interface Props {
     searchParams: Promise<{ edit?: string }>;
 }
 
+async function getJudgeAssignment(volunteerUri: string) {
+    const projectRoomService = new ProjectRoomsService(serverAuthProvider);
+    const rooms = await projectRoomService.getProjectRooms();
+    for (let index = 0; index < rooms.length; index++) {
+        const room = rooms[index];
+        const judgeEmbedded = room.embedded('managedByJudge');
+        if (judgeEmbedded) {
+            const judge = mergeHal<Volunteer>(judgeEmbedded);
+            if (judge.uri === volunteerUri) {
+                const roomId = room.uri ? getEncodedResourceId(room.uri) : null;
+                return { id: roomId, name: `Room ${room.roomNumber ?? (index + 1)}` };
+            }
+        }
+    }
+    return null;
+}
+
+async function getRefereeAssignment(volunteerUri: string) {
+    const refereeResource = await fetchHalResource<Volunteer>(volunteerUri, serverAuthProvider);
+    const supervisesTableLink = refereeResource.link("supervisesTable")?.href;
+
+    if (!supervisesTableLink) return null;
+
+    const parts = supervisesTableLink.split("/competitionTables/");
+    if (parts.length <= 1) return null;
+
+    const tableId = decodeURIComponent(parts[1]);
+
+    const editionsService = new EditionsService(serverAuthProvider);
+    const editions = await editionsService.getEditions();
+    if (editions.length > 0) {
+        const activeEdition = editions.find(e => e.state === 'ACTIVE') || editions.at(-1)!;
+        return { 
+            tableId, 
+            editionId: activeEdition.uri ? getEncodedResourceId(activeEdition.uri) : null 
+        };
+    }
+    
+    return { tableId, editionId: null };
+}
+
 export default async function VolunteerDetailPage(props: Readonly<Props>) {
     const { id } = await props.params;
     const usersService = new UsersService(serverAuthProvider);
@@ -37,38 +78,14 @@ export default async function VolunteerDetailPage(props: Readonly<Props>) {
         const all = [...data.judges, ...data.referees, ...data.floaters];
         volunteer = all.find(v => v.uri === decodeURIComponent(id)) ?? null;
 
-        if (volunteer) {
+        if (volunteer?.uri) {
             if (volunteer.type === "Judge") {
-                const projectRoomService = new ProjectRoomsService(serverAuthProvider);
-                const rooms = await projectRoomService.getProjectRooms();
-                for (let index = 0; index < rooms.length; index++) {
-                    const room = rooms[index];
-                    const judgeEmbedded = room.embedded('managedByJudge');
-                    if (judgeEmbedded) {
-                        const judge = mergeHal<Volunteer>(judgeEmbedded);
-                        if (judge.uri === volunteer.uri) {
-                            const roomId = room.uri ? getEncodedResourceId(room.uri) : null;
-                            assignedProjectRoom = { id: roomId, name: `Room ${room.roomNumber ?? (index + 1)}` };
-                            break;
-                        }
-                    }
-                }
-            } else if (volunteer.type === "Referee" && volunteer.uri) {
-                const refereeResource = await fetchHalResource<Volunteer>(volunteer.uri, serverAuthProvider);
-                const supervisesTableLink = refereeResource.link("supervisesTable")?.href;
-
-                if (supervisesTableLink) {
-                    const parts = supervisesTableLink.split("/competitionTables/");
-                    if (parts.length > 1) {
-                        assignedCompetitionTable = decodeURIComponent(parts[1]);
-
-                        const editionsService = new EditionsService(serverAuthProvider);
-                        const editions = await editionsService.getEditions();
-                        if (editions.length > 0) {
-                            const activeEdition = editions.find(e => e.state === 'ACTIVE') || editions[editions.length - 1];
-                            assignedCompetitionTableEditionId = activeEdition.uri ? getEncodedResourceId(activeEdition.uri) : null;
-                        }
-                    }
+                assignedProjectRoom = await getJudgeAssignment(volunteer.uri);
+            } else if (volunteer.type === "Referee") {
+                const assignment = await getRefereeAssignment(volunteer.uri);
+                if (assignment) {
+                    assignedCompetitionTable = assignment.tableId;
+                    assignedCompetitionTableEditionId = assignment.editionId;
                 }
             }
         }
