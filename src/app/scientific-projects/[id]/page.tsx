@@ -17,6 +17,9 @@ import { Volunteer } from "@/types/volunteer";
 import { buttonVariants } from "@/app/components/button";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EditionsService } from "@/api/editionApi";
+import { Edition } from "@/types/edition";
+import { isEditionActive } from "@/lib/editionStateGuards";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +56,7 @@ export default async function ScientificProjectDetailPage(
     let projectRoom: ProjectRoom | null = null;
     let managedByJudge: Volunteer | null = null;
     let panelists: Volunteer[] = [];
+    let edition: Edition | null = null;
     let projectError: string | null = null;
     let teamError: string | null = null;
 
@@ -133,6 +137,15 @@ export default async function ScientificProjectDetailPage(
         }
     }
 
+    const editionHref = project?.link("edition")?.href ?? project?.edition;
+    if (editionHref) {
+        try {
+            edition = await new EditionsService(serverAuthProvider).getEditionByUri(editionHref);
+        } catch (e) {
+            console.error("Failed to fetch project edition:", e);
+        }
+    }
+
     return (
         <PageShell
             eyebrow="Scientific Project"
@@ -143,13 +156,10 @@ export default async function ScientificProjectDetailPage(
                     : undefined
             }
             heroAside={
-                isAdmin(currentUser) && project ? (
+                isAdmin(currentUser) && project && isEditionActive(edition?.state) ? (
                     <Link
                         href={`/scientific-projects/${id}/edit`}
-                        className={buttonVariants({
-                            variant: "default",
-                            size: "sm",
-                        })}
+                        className={buttonVariants({ variant: "default", size: "sm" })}
                     >
                         Edit
                     </Link>
@@ -179,11 +189,17 @@ export default async function ScientificProjectDetailPage(
                                 )}
                             </div>
 
+                            {!isEditionActive(edition?.state) && (
+                                <div className="mt-5 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                                    This action is available only while the edition is active (OPEN).
+                                </div>
+                            )}
+
                             <ScientificProjectEvaluationEditor
                                 projectId={id}
                                 currentScore={project.score}
                                 currentComments={project.comments}
-                                canEdit={true}
+                                canEdit={(isAdmin(currentUser) || isJudge(currentUser)) && isEditionActive(edition?.state)}
                             />
                         </div>
                     </section>
@@ -262,10 +278,10 @@ export default async function ScientificProjectDetailPage(
                                     {!projectRoom.roomNumber
                                         && !managedByJudge
                                         && panelists.length === 0 && (
-                                        <p className="text-sm text-muted-foreground">
-                                            No room details available.
-                                        </p>
-                                    )}
+                                            <p className="text-sm text-muted-foreground">
+                                                No room details available.
+                                            </p>
+                                        )}
                                 </div>
                             )}
                         </div>

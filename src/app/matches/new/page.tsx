@@ -14,6 +14,9 @@ import { Team } from "@/types/team";
 import { User } from "@/types/user";
 import { redirect } from "next/navigation";
 import NewMatchForm from "./form";
+import { EditionsService } from "@/api/editionApi";
+import { isEditionActive } from "@/lib/editionStateGuards";
+import { Edition } from "@/types/edition";
 
 type Option = {
     label: string;
@@ -99,6 +102,7 @@ export default async function NewMatchPage() {
     let competitionTableOptions: Option[] = [];
     let refereeOptions: Option[] = [];
     let teamOptions: Option[] = [];
+    let hasActiveEdition = false;
 
     try {
         currentUser = await new UsersService(serverAuthProvider).getCurrentUser();
@@ -122,12 +126,14 @@ export default async function NewMatchPage() {
         try {
             const matchesService = new MatchesService(serverAuthProvider);
             const teamsService = new TeamsService(serverAuthProvider);
+            const editionsService = new EditionsService(serverAuthProvider);
 
-            const [rounds, competitionTables, referees, teams] = await Promise.all([
+            const [rounds, competitionTables, referees, teams, editions] = await Promise.all([
                 matchesService.getRounds(),
                 matchesService.getCompetitionTables(),
                 matchesService.getReferees(),
                 teamsService.getTeams(),
+                editionsService.getEditions(),
             ]);
 
             roundOptions = sortOptions(compactOptions(rounds.map(getRoundOption)));
@@ -136,6 +142,7 @@ export default async function NewMatchPage() {
             );
             refereeOptions = sortOptions(compactOptions(referees.map(getRefereeOption)));
             teamOptions = sortOptions(compactOptions(teams.map(getTeamOption)));
+            hasActiveEdition = editions.some((e) => isEditionActive(e.state));
         } catch (e) {
             error = parseErrorMessage(e);
         }
@@ -149,6 +156,10 @@ export default async function NewMatchPage() {
         >
             {error ? (
                 <ErrorAlert message={error} />
+            ) : !hasActiveEdition ? (
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                    This action is available only while the edition is active (OPEN). Open an edition before creating matches.
+                </div>
             ) : (
                 <NewMatchForm
                     roundOptions={roundOptions}

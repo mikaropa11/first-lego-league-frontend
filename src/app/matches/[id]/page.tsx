@@ -23,6 +23,7 @@ import { Pencil } from "lucide-react";
 import Link from "next/link";
 import MatchDeleteSection from "./match-delete-section";
 import RecordResultForm from "./record-result-form";
+import { isEditionActive } from "@/lib/editionStateGuards";
 
 export const dynamic = "force-dynamic";
 
@@ -367,7 +368,11 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                                     {matchResults.length > 0 ? "Edit Result" : "Record Result"}
                                 </h2>
                             </div>
-                            {matchResults.length > 0 ? (
+                            {!isEditionActive(edition?.state) ? (
+                                <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                                    This action is available only while the edition is active (OPEN).
+                                </div>
+                            ) : matchResults.length > 0 ? (
                                 <RecordResultForm
                                     matchId={numericMatchId}
                                     teamAId={teamAId}

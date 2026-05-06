@@ -25,7 +25,12 @@ export default async function NewScientificProjectPage() {
             description="Submit a new scientific project for a FIRST LEGO League edition."
         >
             {error && <ErrorAlert message={error} />}
-            {editionData && !error && (
+            {!error && editionData && !editionData.hasActiveEdition && (
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                    This action is available only while the edition is active (OPEN). No active edition found.
+                </div>
+            )}
+            {!error && editionData && editionData.hasActiveEdition && (
                 <NewScientificProjectForm
                     editionOptions={editionData.editionOptions}
                     teamsPerEdition={editionData.teamsPerEdition}
