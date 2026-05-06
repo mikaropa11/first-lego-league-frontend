@@ -1,13 +1,16 @@
 import { VolunteersService } from "@/api/volunteerApi";
 import { UsersService } from "@/api/userApi";
+import { buttonVariants } from "@/app/components/button";
 import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { parseErrorMessage } from "@/types/errors";
 import { Volunteer } from "@/types/volunteer";
 import { isAdmin } from "@/lib/authz";
+import Link from "next/link";
 import VolunteersClient, { VolunteerItem } from "./volunteers-client";
 
+export const dynamic = "force-dynamic";
 
 function toVolunteerItem(v: Volunteer): VolunteerItem {
     return {
@@ -50,6 +53,14 @@ export default async function VolunteersPage() {
             description="Manage the competition volunteers including judges, referees, and floaters."
         >
             <div className="space-y-8">
+                {userIsAdmin && (
+                    <div className="flex justify-end">
+                        <Link href="/volunteers/new" className={buttonVariants()}>
+                            New Volunteer
+                        </Link>
+                    </div>
+                )}
+
                 {error && <ErrorAlert message={error} />}
 
                 {!error && (

@@ -9,6 +9,8 @@ export interface VolunteerEntity {
     phoneNumber?: string;
     type?: VolunteerRole;
     expert?: boolean;
+    edition?: string;
+    studentCode?: string;
 }
 
 export type Volunteer = VolunteerEntity & Resource;
