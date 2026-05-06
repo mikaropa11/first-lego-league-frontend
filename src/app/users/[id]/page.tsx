@@ -1,5 +1,6 @@
 import { UsersService } from "@/api/userApi";
 import PageShell from "@/app/components/page-shell";
+import { Breadcrumb } from "@/app/components/breadcrumb";
 import ErrorAlert from "@/app/components/error-alert";
 import EditProfileForm from "@/app/components/edit-profile-form";
 import { serverAuthProvider } from "@/lib/authProvider";
@@ -52,6 +53,13 @@ export default async function UsersPage(props: Readonly<UsersPageProps>) {
                 title="User not found"
                 description="The user you're looking for could not be found."
             >
+                <Breadcrumb
+                    items={[
+                        { label: "Home", href: "/" },
+                        { label: "Users", href: "/users" },
+                        { label: "Not found" },
+                    ]}
+                />
                 <ErrorAlert message={error} />
             </PageShell>
         );
@@ -63,6 +71,13 @@ export default async function UsersPage(props: Readonly<UsersPageProps>) {
             title={user?.username || "User"}
             description="Profile information for this participant."
         >
+            <Breadcrumb
+                items={[
+                    { label: "Home", href: "/" },
+                    { label: "Users", href: "/users" },
+                    { label: user?.username || "User" },
+                ]}
+            />
             <div className="space-y-8">
                 <div className="space-y-3">
                     <div className="page-eyebrow">User details</div>

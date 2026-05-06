@@ -1,6 +1,7 @@
 import { ProjectRoomsService } from "@/api/projectRoomApi";
 import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
+import { Breadcrumb } from "@/app/components/breadcrumb";
 import { InfoRow } from "@/app/components/info-row";
 import EmptyState from "@/app/components/empty-state";
 import { buttonVariants } from "@/app/components/button";
@@ -69,6 +70,14 @@ export default async function ProjectRoomDetailPage(props: Readonly<ProjectRoomD
             ) : undefined
         }
         >
+            <Breadcrumb
+                items={[
+                    { label: "Home", href: "/" },
+                    { label: "Project Rooms", href: "/project-rooms" },
+                    { label: `Room ${evaluationRoomNumber}` },
+                ]}
+            />
+
             {error && <ErrorAlert message={error} />}
 
             {!error && room && (

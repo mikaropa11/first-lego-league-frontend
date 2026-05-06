@@ -4,6 +4,7 @@ import { serverAuthProvider } from "@/lib/authProvider";
 import { revalidatePath } from "next/cache";
 import EditVolunteerModal from "./edit-volunteer-modal";
 import EmptyState from "@/app/components/empty-state";
+import { Breadcrumb } from "@/app/components/breadcrumb";
 import { Volunteer } from "@/types/volunteer";
 import { User } from "@/types/user";
 import { parseErrorMessage } from "@/types/errors";
@@ -51,6 +52,13 @@ export default async function VolunteerDetailPage(props: Readonly<Props>) {
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <div className="w-full max-w-3xl px-4 py-10">
+                <Breadcrumb
+                    items={[
+                        { label: "Home", href: "/" },
+                        { label: "Volunteers", href: "/volunteers" },
+                        { label: volunteer.name || "Volunteer" },
+                    ]}
+                />
                 <div className="w-full rounded-lg border bg-white p-6 shadow-sm dark:bg-black">
                     <div className="flex items-center justify-between">
                         <h1 className="text-2xl font-semibold">{volunteer.name || "Unnamed"}</h1>

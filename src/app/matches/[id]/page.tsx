@@ -4,6 +4,7 @@ import { MatchesService } from "@/api/matchesApi";
 import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
 import { buttonVariants } from "@/app/components/button";
+import { Breadcrumb } from "@/app/components/breadcrumb";
 import ErrorAlert from "@/app/components/error-alert";
 import { InfoRow } from '@/app/components/info-row';
 import PageShell from "@/app/components/page-shell";
@@ -267,6 +268,14 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
             title={getMatchTitle(match, id)}
             description={displayState ? `Status: ${displayState}` : undefined}
         >
+            <Breadcrumb
+                items={[
+                    { label: "Home", href: "/" },
+                    { label: "Matches", href: "/matches" },
+                    { label: getMatchTitle(match, id) },
+                ]}
+            />
+
             {matchError && <ErrorAlert message={matchError} />}
 
             {!matchError && match && isAdmin(currentUser) && (

@@ -6,6 +6,7 @@ import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
+import { Breadcrumb } from "@/app/components/breadcrumb";
 import TeamEditSection from "@/app/components/team-edit-section";
 import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
@@ -274,6 +275,13 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <div className="w-full max-w-3xl px-4 py-10">
+                <Breadcrumb
+                    items={[
+                        { label: "Home", href: "/" },
+                        { label: "Teams", href: "/teams" },
+                        { label: teamDisplayName ?? "Team" },
+                    ]}
+                />
                 <div className="w-full rounded-lg border border-border bg-card p-6 shadow-sm">
                     <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <h1 className="text-2xl font-semibold text-foreground">

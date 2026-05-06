@@ -2,6 +2,7 @@ import { ScientificProjectsService } from "@/api/scientificProjectApi";
 import { UsersService } from "@/api/userApi";
 import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
+import { Breadcrumb } from "@/app/components/breadcrumb";
 import { InfoRow } from "@/app/components/info-row";
 import { TeamCard } from "@/app/components/team-card";
 import ScientificProjectEvaluationEditor from "./scientific-project-evaluation-editor";
@@ -156,6 +157,14 @@ export default async function ScientificProjectDetailPage(
                 ) : undefined
             }
         >
+            <Breadcrumb
+                items={[
+                    { label: "Home", href: "/" },
+                    { label: "Scientific Projects", href: "/scientific-projects" },
+                    { label: getProjectTitle(project, id) },
+                ]}
+            />
+
             {projectError && <ErrorAlert message={projectError} />}
 
             {!projectError && project && (

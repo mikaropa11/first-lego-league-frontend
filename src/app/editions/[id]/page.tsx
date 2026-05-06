@@ -6,6 +6,7 @@ import { UsersService } from "@/api/userApi";
 import { buttonVariants } from "@/app/components/button";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
+import { Breadcrumb } from "@/app/components/breadcrumb";
 import LeaderboardTable from "@/app/components/leaderboard-table";
 import { MediaItem } from "@/app/components/media-gallery";
 import { MediaSection } from "@/app/components/media-section";
@@ -171,6 +172,13 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <div className="w-full max-w-3xl px-4 py-10">
+                <Breadcrumb
+                    items={[
+                        { label: "Home", href: "/" },
+                        { label: "Editions", href: "/editions" },
+                        { label: getEditionTitle(edition, id) },
+                    ]}
+                />
                 <div className="w-full rounded-lg border border-border bg-card p-6 shadow-sm">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>

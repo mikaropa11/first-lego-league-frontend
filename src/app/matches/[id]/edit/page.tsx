@@ -3,6 +3,7 @@ import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
 import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
+import { Breadcrumb } from "@/app/components/breadcrumb";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
 import { getTeamDisplayName } from "@/lib/teamUtils";
@@ -280,6 +281,15 @@ export default async function EditMatchPage({ params }: Readonly<MatchEditPagePr
             title={`Edit ${getMatchTitle(data?.match ?? null, id)}`}
             description="Update the scheduled time, round, table, teams, and referee for this match."
         >
+            <Breadcrumb
+                items={[
+                    { label: "Home", href: "/" },
+                    { label: "Matches", href: "/matches" },
+                    { label: getMatchTitle(data?.match ?? null, id), href: `/matches/${id}` },
+                    { label: "Edit" },
+                ]}
+            />
+
             {error || !data ? (
                 <ErrorAlert message={error ?? "This match could not be loaded."} />
             ) : (
