@@ -31,6 +31,14 @@ export class AwardsService {
         return awards;
     }
 
+    async getAwardsByWinner(teamUri: string): Promise<Award[]> {
+        return fetchHalCollection<Award>(
+            `/awards/search/findByWinner?winner=${encodeURIComponent(teamUri)}`,
+            this.authStrategy,
+            "awards"
+        );
+    }
+
     async getAwardsOfEdition(editionUri: string): Promise<Award[]> {
         const encodedEditionUri = encodeURIComponent(editionUri);
         const awards = await fetchHalCollection<Award>(

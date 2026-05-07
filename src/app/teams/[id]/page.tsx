@@ -4,9 +4,9 @@ import { MatchesService } from "@/api/matchesApi";
 import { ScientificProjectsService } from "@/api/scientificProjectApi";
 import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
+import { Breadcrumb } from "@/app/components/breadcrumb";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
-import { Breadcrumb } from "@/app/components/breadcrumb";
 import TeamEditSection from "@/app/components/team-edit-section";
 import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
@@ -16,6 +16,7 @@ import { Match } from "@/types/match";
 import { ScientificProject } from "@/types/scientificProject";
 import { Team, TeamCoach, TeamMember, TeamMemberSnapshot } from "@/types/team";
 import { User } from "@/types/user";
+import AwardSection, { AwardItem } from "./_award-section";
 import TeamAwardsSection from "./_team-awards-section";
 import CoachesDisplay from "./coaches-display";
 import TeamFloatersSection from "./team-floaters-section";
@@ -386,6 +387,14 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
 
                     {membersError && <ErrorAlert message={membersError} />}
 
+                    {awardsError && <ErrorAlert message={awardsError} />}
+                    {awards.length > 0 && !awardsError && (() => {
+                        const awardItems: AwardItem[] = awards.map((award, index) => ({
+                            key: award.link("self")?.href ?? award.uri ?? `${award.name ?? "award"}-${index}`,
+                            name: award.name ?? "Unnamed award",
+                        }));
+                        return <AwardSection awards={awardItems} />;
+                    })()}
                     <section className="mt-8">
                         <h2 className="mb-4 text-xl font-semibold">Tournament Itinerary</h2>
 
