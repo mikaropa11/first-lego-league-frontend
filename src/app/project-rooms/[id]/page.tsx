@@ -1,4 +1,6 @@
 import { ProjectRoomsService } from "@/api/projectRoomApi";
+import { VolunteersService } from "@/api/volunteerApi";
+import { UsersService } from "@/api/userApi";
 import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
 import { Breadcrumb } from "@/app/components/breadcrumb";
@@ -6,19 +8,35 @@ import { InfoRow } from "@/app/components/info-row";
 import EmptyState from "@/app/components/empty-state";
 import { buttonVariants } from "@/app/components/button";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { getEncodedResourceId } from "@/lib/halRoute";
+import { isAdmin } from "@/lib/authz";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import type { ProjectRoom } from "@/types/projectRoom";
 import { mergeHal, mergeHalArray } from "@/api/halClient";
 import type { Volunteer } from "@/types/volunteer";
 import type { ScientificProject } from "@/types/scientificProject";
+import type { User } from "@/types/user";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import ManageJudgesPanel, { type JudgeSnapshot } from "./project-room-judges-panel";
 
 interface ProjectRoomDetailPageProps {
     readonly params: Promise<{ id: string }>;
 }
 
 export const dynamic = "force-dynamic";
+
+function toJudgeSnapshot(volunteer: Volunteer): JudgeSnapshot {
+    const uri = volunteer.uri ?? volunteer.link("self")?.href ?? null;
+
+    return {
+        id: getEncodedResourceId(uri) ?? undefined,
+        uri: uri ?? undefined,
+        name: volunteer.name,
+        emailAddress: volunteer.emailAddress,
+        phoneNumber: volunteer.phoneNumber,
+    };
+}
 
 export default async function ProjectRoomDetailPage(props: Readonly<ProjectRoomDetailPageProps>) {
     const { id } = await props.params;
@@ -27,11 +45,17 @@ export default async function ProjectRoomDetailPage(props: Readonly<ProjectRoomD
     if (!auth) redirect("/login");
 
     const service = new ProjectRoomsService(serverAuthProvider);
+    const volunteersService = new VolunteersService(serverAuthProvider);
+    const usersService = new UsersService(serverAuthProvider);
 
     let room: ProjectRoom | null = null;
     let error: string | null = null;
+    let currentUser: User | null = null;
+    let judges: JudgeSnapshot[] = [];
+    let judgesError: string | null = null;
 
     try {
+        currentUser = await usersService.getCurrentUser().catch(() => null);
         room = await service.getProjectRoomById(id);
     } catch (e) {
         console.error("Failed to fetch project room:", e);
@@ -40,12 +64,14 @@ export default async function ProjectRoomDetailPage(props: Readonly<ProjectRoomD
             : `Could not load room details. ${parseErrorMessage(e)}`;
     }
 
+    const isAdminUser = isAdmin(currentUser);
+
     const judge = room?.embedded("managedByJudge")
-        ? mergeHal<Volunteer>(room.embedded("managedByJudge"))
+        ? toJudgeSnapshot(mergeHal<Volunteer>(room.embedded("managedByJudge")))
         : null;
 
     const panelists = room?.embeddedArray("panelists")
-        ? mergeHalArray<Volunteer>(room.embeddedArray("panelists"))
+        ? mergeHalArray<Volunteer>(room.embeddedArray("panelists")).map(toJudgeSnapshot)
         : [];
 
     const scientificProjects = room?.embeddedArray("scientificProjects")
@@ -53,6 +79,16 @@ export default async function ProjectRoomDetailPage(props: Readonly<ProjectRoomD
         : [];
 
     const evaluationRoomNumber = room?.roomNumber ?? id;
+
+    if (isAdminUser) {
+        try {
+            const volunteers = await volunteersService.getVolunteers();
+            judges = volunteers.judges.map(toJudgeSnapshot);
+        } catch (e) {
+            console.error("Failed to fetch judges:", e);
+            judgesError = `Could not load judges. ${parseErrorMessage(e)}`;
+        }
+    }
 
     return (
         <PageShell
@@ -82,6 +118,22 @@ export default async function ProjectRoomDetailPage(props: Readonly<ProjectRoomD
 
             {!error && room && (
                 <div className="space-y-8">
+                    {isAdminUser && (
+                        <ManageJudgesPanel
+                            key={[
+                                judge?.id ?? judge?.uri ?? "no-manager",
+                                panelists.map((panelist) => panelist.id ?? panelist.uri ?? panelist.name ?? "").join("|"),
+                                judges.map((judgeOption) => judgeOption.id ?? judgeOption.uri ?? judgeOption.name ?? "").join("|"),
+                            ].join("::")}
+                            roomId={id}
+                            roomNumber={evaluationRoomNumber}
+                            initialManagedByJudge={judge}
+                            initialPanelists={panelists}
+                            judges={judges}
+                            errorMessage={judgesError}
+                        />
+                    )}
+
                     <section aria-labelledby="judge-heading">
                         <div className="mb-4 space-y-1">
                             <div className="page-eyebrow">Judging</div>
