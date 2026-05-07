@@ -2,6 +2,8 @@ import { Resource } from "halfred";
 
 export type VolunteerRole = "Judge" | "Referee" | "Floater";
 
+export const VOLUNTEER_ROLES: readonly VolunteerRole[] = ["Judge", "Referee", "Floater"];
+
 export interface VolunteerEntity {
     uri?: string;
     name?: string;
@@ -9,6 +11,8 @@ export interface VolunteerEntity {
     phoneNumber?: string;
     type?: VolunteerRole;
     expert?: boolean;
+    edition?: string;
+    studentCode?: string;
 }
 
 export type Volunteer = VolunteerEntity & Resource;

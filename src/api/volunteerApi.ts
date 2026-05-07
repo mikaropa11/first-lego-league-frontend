@@ -1,14 +1,43 @@
 import type { AuthStrategy } from "@/lib/authProvider";
-import { Volunteer } from "@/types/volunteer";
-import { fetchHalCollection, patchHal, deleteHal } from "./halClient";
+import { Volunteer, VolunteerRole } from "@/types/volunteer";
+import { createHalResource, deleteHal, fetchHalCollection, patchHal } from "./halClient";
 
 type RawVolunteer = {
     uri?: string;
     name?: string;
     emailAddress?: string;
     phoneNumber?: string;
+    edition?: string;
     expert?: boolean;
+    studentCode?: string;
 };
+
+type BaseCreateVolunteerPayload = {
+    name: string;
+    emailAddress: string;
+    phoneNumber: string;
+    edition: string;
+};
+
+export type CreateVolunteerPayload =
+    | (BaseCreateVolunteerPayload & { type: "Judge" | "Referee"; expert: boolean })
+    | (BaseCreateVolunteerPayload & { type: "Floater"; studentCode: string });
+
+type CreateVolunteerRequest = {
+    name: string;
+    emailAddress: string;
+    phoneNumber: string;
+    edition: string;
+    expert?: boolean;
+    studentCode?: string;
+};
+
+const volunteerTypeEndpoints = {
+    Judge: "/judges",
+    Referee: "/referees",
+    Floater: "/floaters",
+} satisfies Record<VolunteerRole, string>;
+
 export class VolunteersService {
     constructor(private readonly authStrategy: AuthStrategy) { }
 
@@ -24,7 +53,9 @@ export class VolunteersService {
             name: v.name || '',
             emailAddress: v.emailAddress || '',
             phoneNumber: v.phoneNumber || '',
+            edition: v.edition || '',
             expert: Boolean(v.expert),
+            studentCode: v.studentCode || '',
             type
         } as Volunteer);
 
@@ -33,6 +64,28 @@ export class VolunteersService {
             referees: referees.map(v => mapV(v, 'Referee')),
             floaters: floaters.map(v => mapV(v, 'Floater'))
         };
+    }
+
+    async createVolunteer(data: CreateVolunteerPayload): Promise<Volunteer> {
+        const payload: CreateVolunteerRequest = {
+            name: data.name,
+            emailAddress: data.emailAddress,
+            phoneNumber: data.phoneNumber,
+            edition: data.edition,
+        };
+
+        if (data.type === "Floater") {
+            payload.studentCode = data.studentCode;
+        } else {
+            payload.expert = data.expert;
+        }
+
+        return createHalResource<Volunteer>(
+            volunteerTypeEndpoints[data.type],
+            payload,
+            this.authStrategy,
+            data.type.toLowerCase(),
+        );
     }
 
     async updateVolunteer(uri: string, data: Partial<Volunteer>): Promise<void> {
