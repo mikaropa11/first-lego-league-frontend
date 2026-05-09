@@ -38,6 +38,11 @@ const PAGE_SIZE = 5;
 
 type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
 type MatchCardTone = "completed" | "live" | "scheduled" | "unknown";
+type SearchParamValue = string | string[] | undefined;
+type MatchFilterChip = {
+    readonly key: string;
+    readonly label: string;
+};
 
 type MatchesSearchState = {
     year?: string;
@@ -90,11 +95,11 @@ function compareMatchTimes(left: string = "", right: string = "") {
     return left.localeCompare(right);
 }
 
-function getSearchValue(value: string | string[] | undefined) {
+function getSearchValue(value: SearchParamValue) {
     return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
 
-function getOptionalSearchValue(value: string | string[] | undefined) {
+function getOptionalSearchValue(value: SearchParamValue) {
     const resolved = getSearchValue(value).trim();
     return resolved.length > 0 ? resolved : undefined;
 }
@@ -124,6 +129,14 @@ function formatEnumLabel(value: string) {
         .filter(Boolean)
         .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
         .join(" ");
+}
+
+function getRoundOptionLabel(round: Round) {
+    if (round.number !== undefined) {
+        return `Round ${round.number}`;
+    }
+
+    return `Round ${round.uri ?? ""}`;
 }
 
 function getMatchTone(state: string | null | undefined): MatchCardTone {
@@ -436,6 +449,103 @@ function getFriendlyMatchesError(error: unknown) {
     return `We could not load the matches. ${parsedMessage}`;
 }
 
+function getMatchFilterChips({
+    year,
+    teamQuery,
+    startTime,
+    endTime,
+    tableId,
+    roundId,
+    isCalendarView,
+    hasScheduleFilters,
+}: MatchesSearchState): MatchFilterChip[] {
+    const chips: MatchFilterChip[] = [];
+
+    if (year) {
+        chips.push({ key: "year", label: `Edition ${year}` });
+    }
+
+    if (teamQuery) {
+        chips.push({ key: "team", label: `Team: ${teamQuery}` });
+    }
+
+    if (startTime) {
+        chips.push({ key: "startTime", label: `Start: ${startTime.replace("T", " ")}` });
+    }
+
+    if (endTime) {
+        chips.push({ key: "endTime", label: `End: ${endTime.replace("T", " ")}` });
+    }
+
+    if (tableId) {
+        chips.push({ key: "tableId", label: `Table: ${tableId}` });
+    }
+
+    if (roundId) {
+        chips.push({ key: "roundId", label: `Round: ${roundId}` });
+    }
+
+    if (hasScheduleFilters || isCalendarView) {
+        chips.push({
+            key: "view",
+            label: isCalendarView ? "Calendar view" : "List view",
+        });
+    }
+
+    return chips;
+}
+
+function getMatchesControlsNote({
+    isCalendarView,
+    hasScheduleFilters,
+    hasTeamFilter,
+    urlPage,
+}: Pick<MatchesSearchState, "isCalendarView" | "hasScheduleFilters" | "hasTeamFilter" | "urlPage">) {
+    if (isCalendarView) {
+        return "Calendar view groups matches by competition table.";
+    }
+
+    if (hasScheduleFilters) {
+        return "Use the filters below to narrow matches by time, table, or round.";
+    }
+
+    if (hasTeamFilter) {
+        return "Team filtering searches the full match directory and narrows the current slate.";
+    }
+
+    return `Showing page ${urlPage} of the published schedule.`;
+}
+
+function getEmptyStateTitle({
+    hasScheduleFilters,
+    hasTeamFilter,
+}: Pick<MatchesSearchState, "hasScheduleFilters" | "hasTeamFilter">) {
+    if (hasScheduleFilters) {
+        return "No matches found for these filters";
+    }
+
+    if (hasTeamFilter) {
+        return "No matches found for this team";
+    }
+
+    return "No matches available";
+}
+
+function getEmptyStateDescription({
+    hasScheduleFilters,
+    hasTeamFilter,
+}: Pick<MatchesSearchState, "hasScheduleFilters" | "hasTeamFilter">) {
+    if (hasScheduleFilters) {
+        return "Try adjusting the time, table, or round filters, or clear them to see more matches.";
+    }
+
+    if (hasTeamFilter) {
+        return "Try another team name or clear the filter.";
+    }
+
+    return "There are no scheduled matches yet.";
+}
+
 function getMatchesSearchState(params: Record<string, string | string[] | undefined>): MatchesSearchState {
     const yearParam = params.year;
     const year = Array.isArray(yearParam) ? yearParam[0] : yearParam;
@@ -673,6 +783,7 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
 
     const { totalCount, liveCount, tableCount, roundCount } = getMatchStats(matches);
     const hasHeroActions = isAdmin(currentUser) || Boolean(editionId);
+    const filterChips = getMatchFilterChips(searchState);
 
     return (
         <PageShell
@@ -720,41 +831,13 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                         <div className="page-eyebrow">Live Listing</div>
                         <h2 className="section-title">Match schedule</h2>
 
-                        {year || teamQuery || searchState.hasScheduleFilters || isCalendarView ? (
+                        {filterChips.length > 0 ? (
                             <div className="matches-page-filter-chips">
-                                {year ? (
-                                    <span className="matches-page-filter-chip">
-                                        Edition {year}
+                                {filterChips.map((chip) => (
+                                    <span key={chip.key} className="matches-page-filter-chip">
+                                        {chip.label}
                                     </span>
-                                ) : null}
-                                {teamQuery ? (
-                                    <span className="matches-page-filter-chip">
-                                        Team: {teamQuery}
-                                    </span>
-                                ) : null}
-                                {searchState.startTime ? (
-                                    <span className="matches-page-filter-chip">
-                                        Start: {searchState.startTime.replace("T", " ")}
-                                    </span>
-                                ) : null}
-                                {searchState.endTime ? (
-                                    <span className="matches-page-filter-chip">
-                                        End: {searchState.endTime.replace("T", " ")}
-                                    </span>
-                                ) : null}
-                                {searchState.tableId ? (
-                                    <span className="matches-page-filter-chip">
-                                        Table: {searchState.tableId}
-                                    </span>
-                                ) : null}
-                                {searchState.roundId ? (
-                                    <span className="matches-page-filter-chip">
-                                        Round: {searchState.roundId}
-                                    </span>
-                                ) : null}
-                                <span className="matches-page-filter-chip">
-                                    {isCalendarView ? "Calendar view" : "List view"}
-                                </span>
+                                ))}
                             </div>
                         ) : null}
                     </div>
@@ -781,13 +864,7 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                             </div>
 
                             <p className="matches-page-controls-note">
-                                {isCalendarView
-                                    ? "Calendar view groups matches by competition table."
-                                    : searchState.hasScheduleFilters
-                                      ? "Use the filters below to narrow matches by time, table, or round."
-                                      : hasTeamFilter
-                                      ? "Team filtering searches the full match directory and narrows the current slate."
-                                      : `Showing page ${urlPage} of the published schedule.`}
+                                {getMatchesControlsNote(searchState)}
                             </p>
                         </div>
                     </div>
@@ -815,10 +892,9 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                             icon={Clock3}
                             label="Matches in view"
                             value={String(totalCount)}
-                            description={
-                                searchState.hasScheduleFilters || hasTeamFilter || year
-                                    ? "This count reflects the active filters and seasonal context."
-                                    : "A live page from the rolling match schedule."
+                            description={searchState.hasScheduleFilters || hasTeamFilter || year
+                                ? "This count reflects the active filters and seasonal context."
+                                : "A live page from the rolling match schedule."
                             }
                         />
 
@@ -849,20 +925,8 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                 {!error && matches.length === 0 ? (
                     <EmptyState
                         className="matches-page-empty-state"
-                        title={
-                            searchState.hasScheduleFilters
-                                ? "No matches found for these filters"
-                                : hasTeamFilter
-                                    ? "No matches found for this team"
-                                    : "No matches available"
-                        }
-                        description={
-                            searchState.hasScheduleFilters
-                                ? "Try adjusting the time, table, or round filters, or clear them to see more matches."
-                                : hasTeamFilter
-                                ? "Try another team name or clear the filter."
-                                : "There are no scheduled matches yet."
-                        }
+                        title={getEmptyStateTitle(searchState)}
+                        description={getEmptyStateDescription(searchState)}
                     />
                 ) : null}
 

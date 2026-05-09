@@ -29,6 +29,14 @@ function fieldClassName() {
     return "h-11 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none transition-[color,box-shadow,border-color,background-color] focus-visible:border-ring focus-visible:ring-ring/35 focus-visible:ring-[3px]";
 }
 
+function getRoundOptionLabel(round: Round) {
+    if (round.number === undefined) {
+        return `Round ${round.uri ?? ""}`;
+    }
+
+    return `Round ${round.number}`;
+}
+
 export default function MatchesFilterBar({
     year,
     view,
@@ -135,8 +143,8 @@ export default function MatchesFilterBar({
                     >
                         <option value="">Any round</option>
                         {rounds.map((round) => (
-                            <option key={round.id ?? round.uri} value={round.id ?? ""}>
-                                {round.number !== undefined ? `Round ${round.number}` : `Round ${round.id ?? ""}`}
+                            <option key={round.uri ?? round.number ?? "round"} value={round.number !== undefined ? String(round.number) : ""}>
+                                {getRoundOptionLabel(round)}
                             </option>
                         ))}
                     </select>
