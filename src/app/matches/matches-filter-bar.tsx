@@ -37,6 +37,14 @@ function getRoundOptionLabel(round: Round) {
     return `Round ${round.number}`;
 }
 
+function getRoundOptionValue(round: Round) {
+    if (typeof round.number === "number") {
+        return String(round.number);
+    }
+
+    return "";
+}
+
 export default function MatchesFilterBar({
     year,
     view,
@@ -143,7 +151,7 @@ export default function MatchesFilterBar({
                     >
                         <option value="">Any round</option>
                         {rounds.map((round) => (
-                            <option key={round.uri ?? round.number ?? "round"} value={round.number !== undefined ? String(round.number) : ""}>
+                            <option key={round.uri ?? round.number ?? "round"} value={getRoundOptionValue(round)}>
                                 {getRoundOptionLabel(round)}
                             </option>
                         ))}
