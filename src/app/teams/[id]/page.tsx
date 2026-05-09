@@ -1,5 +1,6 @@
 import { AwardsService } from "@/api/awardApi";
 import { EditionsService } from "@/api/editionApi";
+import { fetchHalResource } from "@/api/halClient";
 import { MatchesService } from "@/api/matchesApi";
 import { ScientificProjectsService } from "@/api/scientificProjectApi";
 import { TeamsService } from "@/api/teamApi";
@@ -11,6 +12,7 @@ import ErrorAlert from "@/app/components/error-alert";
 import TeamEditSection from "@/app/components/team-edit-section";
 import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { CompetitionTable } from "@/types/competitionTable";
 import { Award } from "@/types/award";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import { Match } from "@/types/match";
@@ -107,10 +109,10 @@ async function resolveMatchForTeam(match: Match, targetId: string, matchesServic
 
     try {
         const [teamA, teamB, competitionTable, round] = await Promise.all([
-            fetchMatchLink(match, "teamA", () => matchesService.getMatchTeamA(matchId)),
-            fetchMatchLink(match, "teamB", () => matchesService.getMatchTeamB(matchId)),
-            fetchMatchLink(match, "competitionTable", () => matchesService.getMatchCompetitionTable(matchId)),
-            fetchMatchLink(match, "round", () => matchesService.getMatchRound(matchId)),
+            fetchMatchLink(match, "teamA", () => fetchHalResource<Team>(`/matches/${encodeURIComponent(matchId)}/teamA`, serverAuthProvider)),
+            fetchMatchLink(match, "teamB", () => fetchHalResource<Team>(`/matches/${encodeURIComponent(matchId)}/teamB`, serverAuthProvider)),
+            fetchMatchLink(match, "competitionTable", () => fetchHalResource<CompetitionTable>(`/matches/${encodeURIComponent(matchId)}/competitionTable`, serverAuthProvider)),
+            fetchMatchLink(match, "round", () => fetchHalResource<Round>(`/matches/${encodeURIComponent(matchId)}/round`, serverAuthProvider)),
         ]);
 
         const opponent = getOpponentName(teamA, teamB, targetId);

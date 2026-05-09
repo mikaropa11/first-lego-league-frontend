@@ -1,11 +1,18 @@
 import type { AuthStrategy } from "@/lib/authProvider";
 import { ApiError } from "@/types/errors";
 import { Match } from "@/types/match";
-import {MatchResult,MatchResultEntity,RegisterMatchScoreRequest, RegisterMatchScoreResponse,} from "@/types/matchResult";
+import { RegisterMatchScoreRequest, RegisterMatchScoreResponse } from "@/types/matchResult";
 import type { HalPage } from "@/types/pagination";
-import { Referee } from "@/types/referee";
-import { Team } from "@/types/team";
-import {API_BASE_URL,createHalResource,deleteHal,fetchHalCollection,fetchHalPagedCollection,fetchHalResource,patchHal,postHal,} from "./halClient";
+import {
+    API_BASE_URL,
+    createHalResource,
+    deleteHal,
+    fetchHalCollection,
+    fetchHalPagedCollection,
+    fetchHalResource,
+    patchHal,
+    postHal,
+} from "./halClient";
 
 export type CreateMatchPayload = {
     startTime: string;
@@ -41,6 +48,30 @@ export interface MatchFilterParams {
     readonly size?: number;
 }
 
+function getMatchPath(id: string, suffix = "") {
+    return `/matches/${encodeURIComponent(id)}${suffix}`;
+}
+
+function buildMatchFilterUrl(filters: MatchFilterParams) {
+    const params = new URLSearchParams();
+
+    if (filters.startTime) params.set("startTime", filters.startTime);
+    if (filters.endTime) params.set("endTime", filters.endTime);
+    if (filters.tableId) params.set("tableId", filters.tableId);
+    if (filters.roundId) params.set("roundId", String(filters.roundId));
+    if (filters.page !== undefined) params.set("page", String(filters.page));
+    if (filters.size !== undefined) params.set("size", String(filters.size));
+
+    const filterUrl = new URL("/matches/filter", API_BASE_URL);
+    const query = params.toString();
+
+    if (query) {
+        filterUrl.search = query;
+    }
+
+    return filterUrl;
+}
+
 function getSafeMatchResultResourcePath(resourceUri: string) {
     let resourcePath = resourceUri;
 
@@ -48,9 +79,9 @@ function getSafeMatchResultResourcePath(resourceUri: string) {
         const url = new URL(resourceUri);
         const apiUrl = new URL(API_BASE_URL);
 
-    if (url.hostname !== apiUrl.hostname) {
-        throw new ApiError("Invalid match result resource URL", 400, true);
-    }
+        if (url.hostname !== apiUrl.hostname) {
+            throw new ApiError("Invalid match result resource URL", 400, true);
+        }
 
         resourcePath = `${url.pathname}${url.search}`;
     }
@@ -94,23 +125,8 @@ export class MatchesService {
     }
 
     async getMatchesFiltered(filters: MatchFilterParams): Promise<MatchSearchPageResponse> {
-        const params = new URLSearchParams();
-
-        if (filters.startTime) params.set("startTime", filters.startTime);
-        if (filters.endTime) params.set("endTime", filters.endTime);
-        if (filters.tableId) params.set("tableId", filters.tableId);
-        if (filters.roundId) params.set("roundId", String(filters.roundId));
-        if (filters.page !== undefined) params.set("page", String(filters.page));
-        if (filters.size !== undefined) params.set("size", String(filters.size));
-
         const auth = await this.authStrategy.getAuth();
-        const query = params.toString();
-        const filterUrl = new URL("/matches/filter", API_BASE_URL);
-
-        if (query) {
-            filterUrl.search = query;
-        }
-
+        const filterUrl = buildMatchFilterUrl(filters);
         const response = await fetch(filterUrl.toString(), {
             headers: {
                 Accept: "application/json",
@@ -139,47 +155,7 @@ export class MatchesService {
     }
 
     async getMatchById(id: string): Promise<Match> {
-        const matchId = encodeURIComponent(id);
-        return fetchHalResource<Match>(`/matches/${matchId}`, this.authStrategy);
-    }
-
-    async getMatchRound(id: string): Promise<Round> {
-        const matchId = encodeURIComponent(id);
-        return fetchHalResource<Round>(`/matches/${matchId}/round`, this.authStrategy);
-    }
-
-    async getMatchTeams(id: string): Promise<Team[]> {
-        const matchId = encodeURIComponent(id);
-
-        return fetchHalCollection<Team>(
-            `/matches/${matchId}/teams`,
-            this.authStrategy,
-            "teams",
-        );
-    }
-
-    async getMatchTeamA(id: string): Promise<Team> {
-        const matchId = encodeURIComponent(id);
-        return fetchHalResource<Team>(`/matches/${matchId}/teamA`, this.authStrategy);
-    }
-
-    async getMatchTeamB(id: string): Promise<Team> {
-        const matchId = encodeURIComponent(id);
-        return fetchHalResource<Team>(`/matches/${matchId}/teamB`, this.authStrategy);
-    }
-
-    async getMatchCompetitionTable(id: string): Promise<CompetitionTable> {
-        const matchId = encodeURIComponent(id);
-
-        return fetchHalResource<CompetitionTable>(
-            `/matches/${matchId}/competitionTable`,
-            this.authStrategy,
-        );
-    }
-
-    async getMatchReferee(id: string): Promise<Referee> {
-        const matchId = encodeURIComponent(id);
-        return fetchHalResource<Referee>(`/matches/${matchId}/referee`, this.authStrategy);
+        return fetchHalResource<Match>(getMatchPath(id), this.authStrategy);
     }
 
     async createMatch(data: CreateMatchPayload): Promise<Match> {
@@ -192,18 +168,7 @@ export class MatchesService {
     }
 
     async updateMatch(id: string, data: CreateMatchPayload): Promise<void> {
-        const matchId = encodeURIComponent(id);
-        await patchHal(`/matches/${matchId}`, data, this.authStrategy);
-    }
-
-    async getMatchResults(matchUri: string): Promise<MatchResult[]> {
-        const encodedUri = encodeURIComponent(matchUri);
-
-        return fetchHalCollection<MatchResultEntity>(
-            `/matchResults/search/findByMatch?match=${encodedUri}`,
-            this.authStrategy,
-            "matchResults",
-        );
+        await patchHal(getMatchPath(id), data, this.authStrategy);
     }
 
     async registerMatchResult(
@@ -255,7 +220,6 @@ export class MatchesService {
     }
 
     async deleteMatch(id: string): Promise<void> {
-        const matchId = encodeURIComponent(id);
-        await deleteHal(`/matches/${matchId}`, this.authStrategy);
+        await deleteHal(getMatchPath(id), this.authStrategy);
     }
 }
