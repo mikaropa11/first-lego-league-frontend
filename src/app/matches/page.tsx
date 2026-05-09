@@ -150,9 +150,51 @@ function getMatchStateLabel(state: string | null | undefined) {
     return "Awaiting status";
 }
 
+function isWhitespaceCharacter(character: string | undefined) {
+    return character !== undefined && character.trim() === "";
+}
+
+function findVsDelimiter(label: string) {
+    const normalizedLabel = label.toLowerCase();
+
+    for (let index = 0; index < normalizedLabel.length - 1; index += 1) {
+        if (normalizedLabel[index] !== "v" || normalizedLabel[index + 1] !== "s") {
+            continue;
+        }
+
+        let start = index;
+        while (start > 0 && isWhitespaceCharacter(label[start - 1])) {
+            start -= 1;
+        }
+
+        if (start === index) {
+            continue;
+        }
+
+        let end = index + 2;
+        while (end < label.length && isWhitespaceCharacter(label[end])) {
+            end += 1;
+        }
+
+        if (end === index + 2) {
+            continue;
+        }
+
+        return { start, end };
+    }
+
+    return null;
+}
+
 function splitMatchLabel(label: string) {
-    const [teamA = "Team A", ...rest] = label.split(/\s+vs\s+/i);
-    const teamB = rest.join(" vs ").trim() || "Team B";
+    const delimiter = findVsDelimiter(label);
+
+    if (!delimiter) {
+        return { teamA: label, teamB: "Team B" };
+    }
+
+    const teamA = label.slice(0, delimiter.start);
+    const teamB = label.slice(delimiter.end).trim() || "Team B";
 
     return { teamA, teamB };
 }
