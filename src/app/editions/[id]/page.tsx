@@ -135,7 +135,6 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
     const editionsService = new EditionsService(serverAuthProvider);
     const awardsService = new AwardsService(serverAuthProvider);
     const mediaService = new MediaService(serverAuthProvider);
-    const favoriteEditionLabel = getEditionTitle(edition, id);
 
     let currentUser: User | null = null;
     let edition: Edition | null = null;
@@ -210,6 +209,8 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
             roundsError = parseErrorMessage(e);
         }
     }
+
+    const favoriteEditionLabel = getEditionTitle(edition, id);
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
