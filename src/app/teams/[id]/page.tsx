@@ -17,6 +17,7 @@ import { Award } from "@/types/award";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import { Match } from "@/types/match";
 import { ScientificProject } from "@/types/scientificProject";
+import { Round } from "@/types/round";
 import { Team, TeamCoach, TeamMember, TeamMemberSnapshot } from "@/types/team";
 import { User } from "@/types/user";
 import AwardSection, { AwardItem } from "./_award-section";
