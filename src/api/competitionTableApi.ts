@@ -1,7 +1,7 @@
 import type { AuthStrategy } from "@/lib/authProvider";
 import { CompetitionTable } from "@/types/competitionTable";
 import { Referee } from "@/types/referee";
-import { API_BASE_URL, createHalResource, deleteHal, fetchHalCollection, patchHal } from "./halClient";
+import { API_BASE_URL, createHalResource, deleteHal, fetchHalCollection, fetchHalResource, patchHal } from "./halClient";
 
 export function getTableId(table: CompetitionTable): string {
     const href = table.link("self")?.href ?? "";
