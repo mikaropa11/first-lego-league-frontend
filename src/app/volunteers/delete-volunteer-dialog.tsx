@@ -4,6 +4,7 @@ import { VolunteersService } from "@/api/volunteerApi";
 import { Button } from "@/app/components/button";
 import ErrorAlert from "@/app/components/error-alert";
 import { clientAuthProvider } from "@/lib/authProvider";
+import { useTranslations } from "@/lib/languageContext";
 import { parseErrorMessage } from "@/types/errors";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -19,6 +20,7 @@ interface DeleteVolunteerDialogProps {
 }
 
 export function DeleteVolunteerDialog({ volunteer, onSuccess, onCancel }: Readonly<DeleteVolunteerDialogProps>) {
+    const t = useTranslations();
     const dialogRef = useRef<HTMLDialogElement>(null);
     const titleId = useId();
     const [isDeleting, setIsDeleting] = useState(false);
@@ -51,17 +53,19 @@ export function DeleteVolunteerDialog({ volunteer, onSuccess, onCancel }: Readon
             className="m-auto p-6 rounded-lg border shadow-lg backdrop:bg-black/50 w-full max-w-sm"
             onClose={onCancel}
         >
-            <h2 id={titleId} className="text-lg font-bold">Delete Volunteer</h2>
-            <p className="py-4 text-sm">Are you sure you want to remove <b>{volunteer.name}</b> from the volunteers directory?</p>
+            <h2 id={titleId} className="text-lg font-bold">{t.volunteers.deleteVolunteer}</h2>
+            <p className="py-4 text-sm">
+                {t.volunteers.deleteConfirmation.replace('{name}', volunteer.name)}
+            </p>
             
             {errorMessage && <ErrorAlert message={errorMessage} className="mb-4" />}
 
             <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={onCancel} disabled={isDeleting}>
-                    Cancel
+                    {t.common.cancel}
                 </Button>
                 <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-                    {isDeleting ? "Deleting..." : "Delete"}
+                    {isDeleting ? t.volunteers.deleting : t.common.delete}
                 </Button>
             </div>
         </dialog>

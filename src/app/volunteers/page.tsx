@@ -3,6 +3,7 @@ import { UsersService } from "@/api/userApi";
 import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { parseErrorMessage } from "@/types/errors";
 import { Volunteer } from "@/types/volunteer";
 import { isAdmin } from "@/lib/authz";
@@ -20,6 +21,7 @@ function toVolunteerItem(v: Volunteer): VolunteerItem {
 }
 
 export default async function VolunteersPage() {
+    const t = await getServerTranslations();
     const service = new VolunteersService(serverAuthProvider);
     const usersService = new UsersService(serverAuthProvider);
 
@@ -45,9 +47,9 @@ export default async function VolunteersPage() {
 
     return (
         <PageShell
-            eyebrow="Volunteers directory"
-            title="Volunteers"
-            description="Manage the competition volunteers including judges, referees, and floaters."
+            eyebrow={t.volunteers.directory}
+            title={t.volunteers.title}
+            description={t.volunteers.directoryDescription}
         >
             <div className="space-y-8">
                 {error && <ErrorAlert message={error} />}

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckCircle, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/button";
 import { UserEntity } from "@/types/user";
+import { useTranslations } from "@/lib/languageContext";
 import DeleteAdministratorDialog from "./delete-administrator-dialog";
 import CopyEmailButton from "@/app/components/copy-email-button";
 
@@ -18,6 +19,7 @@ export default function AdministratorList({
   administrators,
   currentUsername,
 }: AdministratorListProps) {
+  const t = useTranslations();
   const router = useRouter();
   const [adminToDelete, setAdminToDelete] = useState<UserEntity | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export default function AdministratorList({
 
   function handleDeleteSuccess() {
     setAdminToDelete(null);
-    setSuccessMessage("Administrator deleted successfully.");
+    setSuccessMessage(t.administrators.administratorDeleted);
     router.refresh();
   }
 
@@ -54,14 +56,14 @@ export default function AdministratorList({
         {administrators.map((administrator) => {
           const isSelf = administrator.username === currentUsername;
           const deleteLabel = isSelf
-            ? "You cannot delete your own account"
-            : `Delete ${administrator.username}`;
+            ? t.administrators.cannotDeleteOwnAccount
+            : `${t.administrators.deleteAdministrator} ${administrator.username}`;
 
           return (
             <li key={administrator.username} className="list-card pl-7">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <div className="list-kicker">Administrator</div>
+                  <div className="list-kicker">{t.administrators.administratorLabel}</div>
 
                   <Link
                     className="list-title block hover:text-primary"
@@ -100,7 +102,7 @@ export default function AdministratorList({
                   onClick={() => setAdminToDelete(administrator)}
                 >
                   <Trash2 aria-hidden="true" />
-                  Delete
+                  {t.administrators.deleteAdministrator}
                 </Button>
               </div>
             </li>

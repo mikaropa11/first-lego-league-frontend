@@ -11,6 +11,8 @@ import PaginationControls from "@/app/components/pagination-controls";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
+import { getServerTranslations } from "@/lib/i18n/server";
+import type { Translations } from "@/lib/i18n";
 import { filterMatchesByTeam, normalizeTeamSearch } from "@/lib/matchFilter";
 import { formatMatchTime } from "@/lib/matchUtils";
 import { parseErrorMessage } from "@/types/errors";
@@ -26,9 +28,9 @@ export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 5;
 
-function getTeamsLabel(match: Match, labels: Record<string, string>) {
+function getTeamsLabel(match: Match, labels: Record<string, string>, t: Translations) {
     const key = match.link("self")?.href ?? match.uri;
-    return labels[key] ?? "Unknown Team vs Unknown Team";
+    return labels[key] ?? t.matches.unknownTeams;
 }
 
 function getMatchKey(match: Match, index: number) {
@@ -51,7 +53,12 @@ function getSearchValue(value: string | string[] | undefined) {
     return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
 
-function MatchesTeamFilter({ query, year, view }: Readonly<{ query: string; year?: string; view?: string }>) {
+function MatchesTeamFilter({
+    query,
+    year,
+    view,
+    t,
+}: Readonly<{ query: string; year?: string; view?: string; t: Translations }>) {
     const resetParams = new URLSearchParams();
     if (year) resetParams.set("year", year);
     if (view === "calendar") resetParams.set("view", view);
@@ -63,27 +70,27 @@ function MatchesTeamFilter({ query, year, view }: Readonly<{ query: string; year
             {view === "calendar" ? <input type="hidden" name="view" value={view} /> : null}
             <div className="min-w-0 flex-1 space-y-2">
                 <label htmlFor="team-search" className="text-sm font-medium text-foreground">
-                    Team filter
+                    {t.matches.teamFilterLabel}
                 </label>
                 <Input
                     id="team-search"
                     name="team"
                     type="search"
                     defaultValue={query}
-                    placeholder="Search by team name..."
+                    placeholder={t.matches.searchByTeamName}
                     autoComplete="off"
                 />
             </div>
             <div className="flex gap-2">
                 <button type="submit" className={buttonVariants({ variant: "secondary", size: "default" })}>
-                    Search
+                    {t.matches.search}
                 </button>
                 {query ? (
                     <Link
                         href={resetHref}
                         className={buttonVariants({ variant: "ghost", size: "default" })}
                     >
-                        Reset
+                        {t.matches.reset}
                     </Link>
                 ) : null}
             </div>
@@ -91,17 +98,22 @@ function MatchesTeamFilter({ query, year, view }: Readonly<{ query: string; year
     );
 }
 
-function MatchesTable({ matches, labels, yearQuery }: Readonly<{ matches: Match[]; labels: Record<string, string>; yearQuery: string }>) {
+function MatchesTable({
+    matches,
+    labels,
+    yearQuery,
+    t,
+}: Readonly<{ matches: Match[]; labels: Record<string, string>; yearQuery: string; t: Translations }>) {
     return (
         <div className="overflow-hidden border border-border">
             <div className="overflow-x-auto">
                 <table className="w-full min-w-2xl border-collapse text-left">
-                    <caption className="sr-only">List of matches with start time, end time and teams.</caption>
+                    <caption className="sr-only">{t.matches.listCaption}</caption>
                     <thead className="bg-secondary/70">
                         <tr>
-                            <th className="px-4 py-3 text-sm font-semibold text-foreground sm:px-5">Start time</th>
-                            <th className="px-4 py-3 text-sm font-semibold text-foreground sm:px-5">End time</th>
-                            <th className="px-4 py-3 text-sm font-semibold text-foreground sm:px-5">Teams</th>
+                            <th className="px-4 py-3 text-sm font-semibold text-foreground sm:px-5">{t.matches.startTime}</th>
+                            <th className="px-4 py-3 text-sm font-semibold text-foreground sm:px-5">{t.matches.endTime}</th>
+                            <th className="px-4 py-3 text-sm font-semibold text-foreground sm:px-5">{t.matches.teams}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -125,7 +137,7 @@ function MatchesTable({ matches, labels, yearQuery }: Readonly<{ matches: Match[
                                         <div className="flex items-center gap-2">
                                             {match.state === "IN_PROGRESS" && (
                                                 <span className="inline-flex animate-pulse items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-700">
-                                                    ● LIVE
+                                                    {t.matches.live}
                                                 </span>
                                             )}
                                             {matchId ? (
@@ -133,10 +145,10 @@ function MatchesTable({ matches, labels, yearQuery }: Readonly<{ matches: Match[
                                                     href={`/matches/${matchId}${yearQuery}`}
                                                     className="hover:text-foreground hover:underline underline-offset-2"
                                                 >
-                                                    {getTeamsLabel(match, labels)}
+                                                    {getTeamsLabel(match, labels, t)}
                                                 </Link>
                                             ) : (
-                                                getTeamsLabel(match, labels)
+                                                getTeamsLabel(match, labels, t)
                                             )}
                                         </div>
                                     </td>
@@ -150,14 +162,14 @@ function MatchesTable({ matches, labels, yearQuery }: Readonly<{ matches: Match[
     );
 }
 
-function getFriendlyMatchesError(error: unknown) {
+function getFriendlyMatchesError(error: unknown, t: Translations) {
     const parsedMessage = parseErrorMessage(error);
 
     if (parsedMessage === "An unexpected error occurred. Please try again.") {
-        return "We could not load the matches right now. Please try again in a few minutes.";
+        return t.matches.matchesLoadError;
     }
 
-    return `We could not load the matches. ${parsedMessage}`;
+    return `${t.matches.matchesLoadErrorPrefix} ${parsedMessage}`;
 }
 
 type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -288,6 +300,7 @@ async function resolveMatchLabels(matches: Match[]) {
 }
 
 export default async function MatchesPage({ searchParams }: Readonly<{ searchParams: PageSearchParams }>) {
+    const t = await getServerTranslations();
     const searchState = getMatchesSearchState(await searchParams);
     const { year, yearQuery, urlPage, view, isCalendarView, teamQuery, normalizedTeamQuery, hasTeamFilter } = searchState;
 
@@ -309,7 +322,7 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
 
     } catch (fetchError) {
         console.error("Failed to fetch matches:", fetchError);
-        error = getFriendlyMatchesError(fetchError);
+        error = getFriendlyMatchesError(fetchError, t);
     }
 
     function buildViewUrl(newView: string) {
@@ -324,23 +337,23 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
 
     return (
         <PageShell
-            eyebrow="Competition schedule"
-            title="Matches"
-            description="Browse the scheduled matches with timing details and participating teams."
+            eyebrow={t.matches.competitionSchedule}
+            title={t.matches.title}
+            description={t.matches.description}
             heroAside={isAdmin(currentUser) ? (
                 <Link
                     href={`/matches/new${yearQuery}`}
                     className={buttonVariants({ variant: "default", size: "sm" })}
                 >
-                    + Create
+                    + {t.common.create}
                 </Link>
             ) : undefined}
         >
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                     <div className="space-y-3">
-                        <div className="page-eyebrow">Live listing</div>
-                        <h2 className="section-title">Match schedule</h2>
+                        <div className="page-eyebrow">{t.matches.liveListing}</div>
+                        <h2 className="section-title">{t.matches.matchSchedule}</h2>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         <div className="flex bg-secondary p-1 rounded-md border border-border">
@@ -351,7 +364,7 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                                     isCalendarView ? "text-muted-foreground hover:text-foreground" : "bg-background text-foreground shadow-sm"
                                 )}
                             >
-                                List
+                                {t.matches.viewList}
                             </Link>
                             <Link
                                 href={buildViewUrl("calendar")}
@@ -360,7 +373,7 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                                     isCalendarView ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                                 )}
                             >
-                                Calendar
+                                {t.matches.viewCalendar}
                             </Link>
                         </div>
                         {editionId && (
@@ -368,7 +381,7 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                                 href={`/editions/${editionId}/competition-tables`}
                                 className={buttonVariants({ variant: "outline", size: "sm" })}
                             >
-                                Competition Tables
+                                {t.nav.competitionTables}
                             </Link>
                         )}
                     </div>
@@ -376,21 +389,21 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
 
                 {error && <ErrorAlert message={error} />}
 
-                {!error && <MatchesTeamFilter query={teamQuery} year={year} view={view} />}
+                {!error && <MatchesTeamFilter query={teamQuery} year={year} view={view} t={t} />}
 
                 {!error && matches.length === 0 && (
                     <EmptyState
-                        title={hasTeamFilter ? "No matches found for this team" : "No matches available"}
-                        description={hasTeamFilter ? "Try another team name or clear the filter." : "There are no scheduled matches yet."}
+                        title={hasTeamFilter ? t.matches.noMatchesFoundForTeam : t.matches.noMatchesAvailable}
+                        description={hasTeamFilter ? t.matches.tryAnotherTeamName : t.matches.noScheduledMatches}
                     />
                 )}
 
                 {!error && matches.length > 0 && (
                     <div className="space-y-4">
                         {isCalendarView ? (
-                            <MatchesTimeline matches={matches} labels={matchLabels} yearQuery={yearQuery} />
+                            <MatchesTimeline matches={matches} labels={matchLabels} yearQuery={yearQuery} t={t} />
                         ) : (
-                            <MatchesTable matches={matches} labels={matchLabels} yearQuery={yearQuery} />
+                            <MatchesTable matches={matches} labels={matchLabels} yearQuery={yearQuery} t={t} />
                         )}
                         {!year && !isCalendarView && !hasTeamFilter && (
                             <PaginationControls

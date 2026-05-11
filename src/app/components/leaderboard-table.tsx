@@ -4,17 +4,28 @@ import Link from "next/link";
 
 interface LeaderboardTableProps {
     readonly items: LeaderboardItem[];
+    readonly labels?: {
+        readonly team: string;
+        readonly totalScore: string;
+        readonly matchesPlayed: string;
+    };
 }
 
-export default function LeaderboardTable({ items }: LeaderboardTableProps) {
+export default function LeaderboardTable({ items, labels }: LeaderboardTableProps) {
+    const tableLabels = labels ?? {
+        team: "Team",
+        totalScore: "Total Score",
+        matchesPlayed: "Matches Played",
+    };
+
     return (
         <table className="w-full text-sm">
             <thead>
                 <tr className="border-b border-border text-left text-muted-foreground">
                     <th scope="col" className="pb-3 pr-4 font-medium">#</th>
-                    <th scope="col" className="pb-3 pr-4 font-medium">Team</th>
-                    <th scope="col" className="pb-3 pr-4 font-medium text-right">Total Score</th>
-                    <th scope="col" className="pb-3 font-medium text-right">Matches Played</th>
+                    <th scope="col" className="pb-3 pr-4 font-medium">{tableLabels.team}</th>
+                    <th scope="col" className="pb-3 pr-4 font-medium text-right">{tableLabels.totalScore}</th>
+                    <th scope="col" className="pb-3 font-medium text-right">{tableLabels.matchesPlayed}</th>
                 </tr>
             </thead>
             <tbody>

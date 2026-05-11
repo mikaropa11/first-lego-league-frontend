@@ -2,11 +2,13 @@
 
 import { useAuth } from "@/app/components/authentication";
 import EditionSelector from "@/app/components/edition-selector";
+import { LanguageSelector } from "@/app/components/language-selector";
 import Loginbar from "@/app/components/loginbar";
+import { useTranslations } from "@/lib/languageContext";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, Moon, Sun } from "lucide-react";
 
 interface NavLink {
     href: string;
@@ -32,17 +34,18 @@ export default function Navbar() {
     const searchParams = useSearchParams();
     const currentYear = searchParams.get("year");
     const { user } = useAuth();
+    const t = useTranslations();
 
     const mainNavLinks: NavLink[] = [
-        { href: "/teams", label: "Teams" },
-        { href: "/scientific-projects", label: "Scientific Projects" },
-        { href: "/matches", label: "Matches" },
+        { href: "/teams", label: t.nav.teams },
+        { href: "/scientific-projects", label: t.nav.scientificProjects },
+        { href: "/matches", label: t.nav.matches },
     ];
 
     const moduleLinks: NavLink[] = [
-        { href: "/editions", label: "Editions" },
-        { href: "/volunteers", label: "Volunteers" },
-        { href: "/administrators", label: "Administrators", roles: ["ROLE_ADMIN"] }
+        { href: "/editions", label: t.nav.editions },
+        { href: "/volunteers", label: t.nav.volunteers },
+        { href: "/administrators", label: t.nav.administrators, roles: ["ROLE_ADMIN"] }
     ];
 
     const getHref = (href: string) => currentYear ? `${href}?year=${encodeURIComponent(currentYear)}` : href;
@@ -83,7 +86,7 @@ export default function Navbar() {
                                 onClick={() => setIsModulesOpen(!isModulesOpen)}
                                 className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors rounded-md whitespace-nowrap ${isModulesOpen ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                             >
-                                Modules <ChevronDown size={14} className={`transition-transform duration-200 ${isModulesOpen ? 'rotate-180' : ''}`} />
+                                {t.nav.modules} <ChevronDown size={14} className={`transition-transform duration-200 ${isModulesOpen ? 'rotate-180' : ''}`} />
                             </button>
 
                             {isModulesOpen && (
@@ -99,7 +102,7 @@ export default function Navbar() {
                                         }}
                                         role="button"
                                         tabIndex={-1}
-                                        aria-label="Close menu"
+                                        aria-label={t.language.closeMenu}
                                     />
 
                                     <div className="absolute left-0 top-full pt-2 w-48 flex flex-col z-50 animate-in fade-in zoom-in-95">
@@ -129,14 +132,15 @@ export default function Navbar() {
                             <EditionSelector />
                         </Suspense>
                         <Loginbar />
+                        <LanguageSelector />
                         <button
                             type="button"
                             onClick={toggleTheme}
-                            aria-label="Toggle dark mode"
+                            aria-label={t.common.toggleDarkMode}
                             className="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground cursor-pointer transition-colors"
                         >
-                            <span className="dark:hidden">🌙</span>
-                            <span className="hidden dark:inline">☀️</span>
+                            <Moon className="h-4 w-4 dark:hidden" aria-hidden="true" />
+                            <Sun className="hidden h-4 w-4 dark:inline" aria-hidden="true" />
                         </button>
 
                         {/* Mobile Menu Button */}

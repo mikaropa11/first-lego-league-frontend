@@ -8,6 +8,7 @@ import EmptyState from "@/app/components/empty-state";
 import { CompetitionTableService } from "@/api/competitionTableApi";
 import { clientAuthProvider } from "@/lib/authProvider";
 import { parseErrorMessage } from "@/types/errors";
+import { useTranslations } from "@/lib/languageContext";
 import CreateCompetitionTableDialog from "./create-competition-table-dialog";
 import AssignRefereeDialog, { RefereeOption } from "./assign-referee-dialog";
 
@@ -19,6 +20,7 @@ interface CompetitionTableListProps {
 
 export default function CompetitionTableList({ tables, refereesByTable, allReferees }: CompetitionTableListProps) {
     const router = useRouter();
+    const t = useTranslations();
     const [assigningTable, setAssigningTable] = useState<string | null>(null);
     const [deletingTable, setDeletingTable] = useState<string | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -40,8 +42,8 @@ export default function CompetitionTableList({ tables, refereesByTable, allRefer
     return (
         <div className="space-y-6">
             <div className="space-y-3">
-                <div className="page-eyebrow">Management</div>
-                <h2 className="section-title">Tables</h2>
+                <div className="page-eyebrow">{t.competitionTables.management}</div>
+                <h2 className="section-title">{t.competitionTables.title}</h2>
             </div>
 
             <CreateCompetitionTableDialog />
@@ -54,8 +56,8 @@ export default function CompetitionTableList({ tables, refereesByTable, allRefer
 
             {tables.length === 0 && (
                 <EmptyState
-                    title="No competition tables"
-                    description="Create the first table to get started."
+                    title={t.competitionTables.noTables}
+                    description={t.competitionTables.noTablesDescription}
                 />
             )}
 
@@ -73,9 +75,9 @@ export default function CompetitionTableList({ tables, refereesByTable, allRefer
                     <table className="w-full text-sm">
                         <thead className="bg-muted/50">
                             <tr>
-                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Table</th>
-                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Referees</th>
-                                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
+                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t.competitionTables.tableName}</th>
+                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t.competitionTables.referees}</th>
+                                <th className="px-4 py-3 text-right font-medium text-muted-foreground">{t.common.actions}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -86,7 +88,7 @@ export default function CompetitionTableList({ tables, refereesByTable, allRefer
                                         <td className="px-4 py-3 font-medium">{tableId}</td>
                                         <td className="px-4 py-3 text-muted-foreground">
                                             {referees.length === 0 ? (
-                                                <span className="text-xs italic">No referees assigned</span>
+                                                <span className="text-xs italic">{t.competitionTables.noRefereesAssigned}</span>
                                             ) : (
                                                 <ul className="space-y-0.5">
                                                     {referees.map(r => (
@@ -103,7 +105,7 @@ export default function CompetitionTableList({ tables, refereesByTable, allRefer
                                                     disabled={!!deletingTable}
                                                 >
                                                     <UserPlus className="mr-1 h-3 w-3" />
-                                                    Referees
+                                                    {t.competitionTables.assignReferee}
                                                 </button>
                                                 <Button
                                                     variant="destructive"
@@ -112,7 +114,7 @@ export default function CompetitionTableList({ tables, refereesByTable, allRefer
                                                     disabled={deletingTable === tableId}
                                                 >
                                                     <Trash2 className="mr-1 h-3 w-3" />
-                                                    {deletingTable === tableId ? "Deleting..." : "Delete"}
+                                                    {deletingTable === tableId ? t.competitionTables.deleting : t.common.delete}
                                                 </Button>
                                             </div>
                                         </td>

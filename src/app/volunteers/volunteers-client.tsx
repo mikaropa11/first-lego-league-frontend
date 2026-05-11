@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
 import { Flag, Scale, Users } from 'lucide-react';
 import { DeleteVolunteerDialog } from './delete-volunteer-dialog';
+import { useTranslations } from '@/lib/languageContext';
 
 export interface VolunteerItem {
     name?: string;
@@ -81,6 +82,7 @@ function VolunteerSection({
     isAdmin,
     onDeleteRequest,
 }: Readonly<VolunteerSectionProps>) {
+    const t = useTranslations();
     const [query, setQuery] = useState('');
     const filtered = filterByName(volunteers, query);
 
@@ -90,13 +92,13 @@ function VolunteerSection({
 
             <Input
                 type="search"
-                placeholder={`Search ${typePlural}`}
+                placeholder={t.volunteers.searchRole.replace('{role}', typePlural)}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
             />
 
             {filtered.length === 0 ? (
-                <EmptyState title={`No ${typePlural}`} description={emptyMessage} />
+                <EmptyState title={`${t.common.noResults}: ${typePlural}`} description={emptyMessage} />
             ) : (
                 <ul className="list-grid">
                     {filtered.map((v, idx) => {
@@ -109,13 +111,13 @@ function VolunteerSection({
                                     <div className="flex items-center gap-2">
                                         <Link href={`/volunteers/${id}`}>
                                             <span className="list-title font-medium hover:underline cursor-pointer">
-                                                {v.name || 'Unknown'}
+                                                {v.name || t.volunteers.unknown}
                                             </span>
                                         </Link>
 
                                         {v.expert && (
                                             <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-amber-200">
-                                                Expert
+                                                {t.volunteers.expert}
                                             </span>
                                         )}
                                     </div>
@@ -130,17 +132,17 @@ function VolunteerSection({
                                         <Link
                                             href={`/volunteers/${id}?edit=true`}
                                             className={buttonVariants({ variant: "outline", size: "sm" })}
-                                            aria-label={`Edit ${v.expert ? 'Expert ' : ''}${v.name ?? 'volunteer'}`}
+                                            aria-label={`${t.common.edit} ${v.expert ? `${t.volunteers.expert} ` : ''}${v.name ?? t.volunteers.unknownVolunteer}`}
                                         >
-                                            Edit
+                                            {t.common.edit}
                                         </Link>
                                         <Button
                                             variant="destructive"
                                             size="sm"
                                             onClick={() => v.name && v.uri && onDeleteRequest({ name: v.name, uri: v.uri })}
-                                            aria-label={`Delete ${v.name ?? 'volunteer'}`}
+                                            aria-label={`${t.common.delete} ${v.name ?? t.volunteers.unknownVolunteer}`}
                                         >
-                                            Delete
+                                            {t.common.delete}
                                         </Button>
                                     </div>
                                 )}
@@ -161,51 +163,52 @@ export default function VolunteersClient({
 }: Readonly<VolunteersClientProps>) {
     const [selectedForDelete, setSelectedForDelete] = useState<{ name: string; uri: string } | null>(null);
     const router = useRouter();
+    const t = useTranslations();
 
     return (
         <div className="space-y-12">
             <div className="teams-page-stats-grid">
                 <StatCard
                     icon={Scale}
-                    label="Judges"
+                    label={t.volunteers.judges}
                     value={String(judges.length)}
-                    description="Volunteers assigned to judging panels."
+                    description={t.volunteers.judgesDescription}
                 />
                 <StatCard
                     icon={Flag}
-                    label="Referees"
+                    label={t.volunteers.referees}
                     value={String(referees.length)}
-                    description="Volunteers available to referee matches."
+                    description={t.volunteers.refereesDescription}
                 />
                 <StatCard
                     icon={Users}
-                    label="Floaters"
+                    label={t.volunteers.floaters}
                     value={String(floaters.length)}
-                    description="Flexible volunteers supporting event operations."
+                    description={t.volunteers.floatersDescription}
                 />
             </div>
 
             <VolunteerSection
-                title="Judges"
-                typePlural="judges"
+                title={t.volunteers.judges}
+                typePlural={t.volunteers.judges.toLowerCase()}
                 volunteers={judges}
-                emptyMessage="No judges available"
+                emptyMessage={t.volunteers.noJudges}
                 isAdmin={isAdmin}
                 onDeleteRequest={setSelectedForDelete}
             />
             <VolunteerSection
-                title="Referees"
-                typePlural="referees"
+                title={t.volunteers.referees}
+                typePlural={t.volunteers.referees.toLowerCase()}
                 volunteers={referees}
-                emptyMessage="No referees available"
+                emptyMessage={t.volunteers.noReferees}
                 isAdmin={isAdmin}
                 onDeleteRequest={setSelectedForDelete}
             />
             <VolunteerSection
-                title="Floaters"
-                typePlural="floaters"
+                title={t.volunteers.floaters}
+                typePlural={t.volunteers.floaters.toLowerCase()}
                 volunteers={floaters}
-                emptyMessage="No floaters available"
+                emptyMessage={t.volunteers.noFloaters}
                 isAdmin={isAdmin}
                 onDeleteRequest={setSelectedForDelete}
             />

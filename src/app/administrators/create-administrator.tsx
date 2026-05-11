@@ -9,8 +9,10 @@ import { Label } from "@/app/components/label";
 import { UsersService } from "@/api/userApi";
 import { clientAuthProvider } from "@/lib/authProvider";
 import { parseErrorMessage } from "@/types/errors";
+import { useTranslations } from "@/lib/languageContext";
 
 export default function CreateAdministrator() {
+    const t = useTranslations();
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -27,13 +29,13 @@ export default function CreateAdministrator() {
         setSuccessMessage(null);
 
         if (!username || !email || !password) {
-            setError("All fields are required.");
+            setError(t.forms.fieldRequired);
             return;
         }
 
         const emailRegex = /^[\w\-.]+@([\w-]+\.)+[\w-]{2,}$/;
         if (!emailRegex.test(email)) {
-            setError("Please enter a valid email address.");
+            setError(t.forms.invalidEmail);
             return;
         }
 
@@ -42,7 +44,7 @@ export default function CreateAdministrator() {
         try {
             const service = new UsersService(clientAuthProvider);
             await service.createAdministrator({ username, email, password });
-            setSuccessMessage(`Administrator ${username} created successfully.`);
+            setSuccessMessage(t.administrators.administratorCreated);
             setUsername("");
             setEmail("");
             setPassword("");
@@ -60,7 +62,7 @@ export default function CreateAdministrator() {
             <div className="mb-6">
                 <Button onClick={() => setIsOpen(true)}>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Create administrator
+                    {t.administrators.createAdministrator}
                 </Button>
                 {successMessage && (
                     <div className="mt-4 flex items-center gap-3 border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm font-medium text-green-700">
@@ -75,8 +77,8 @@ export default function CreateAdministrator() {
     return (
         <div className="mb-8 rounded-lg border bg-card p-6 shadow-sm">
             <div className="mb-4">
-                <h3 className="text-lg font-medium">Create Administrator</h3>
-                <p className="text-sm text-muted-foreground">Add a new administrator to the system.</p>
+                <h3 className="text-lg font-medium">{t.administrators.createAdministrator}</h3>
+                <p className="text-sm text-muted-foreground">{t.administrators.createAdministratorDescription}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,43 +90,43 @@ export default function CreateAdministrator() {
                 )}
 
                 <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="username">{t.administrators.username}</Label>
                     <Input
                         id="username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="e.g. admin_jdoe"
+                        placeholder={t.administrators.usernamePlaceholder}
                         disabled={isLoading}
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t.administrators.email}</Label>
                     <Input
                         id="email"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="e.g. admin@example.com"
+                        placeholder={t.administrators.emailPlaceholder}
                         disabled={isLoading}
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{t.administrators.password}</Label>
                     <Input
                         id="password"
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder={t.administrators.passwordPlaceholder}
                         disabled={isLoading}
                     />
                 </div>
 
                 <div className="flex gap-3 pt-2">
                     <Button type="submit" disabled={isLoading}>
-                        {isLoading ? "Creating..." : "Create administrator"}
+                        {isLoading ? t.common.loading : t.administrators.createAdministrator}
                     </Button>
                     <Button
                         type="button"
@@ -135,7 +137,7 @@ export default function CreateAdministrator() {
                         }}
                         disabled={isLoading}
                     >
-                        Cancel
+                        {t.common.cancel}
                     </Button>
                 </div>
             </form>

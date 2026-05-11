@@ -9,6 +9,7 @@ import PaginationControls from "@/app/components/pagination-controls";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 import { ApiError, AuthenticationError, parseErrorMessage } from "@/types/errors";
 import type { HalPage } from "@/types/pagination";
@@ -181,6 +182,8 @@ function StatCard({
 export default async function TeamsPage({
   searchParams,
 }: Readonly<{ searchParams: PageSearchParams }>) {
+  const t = await getServerTranslations();
+
   const params = await searchParams;
   const yearParam = params.year;
   const year = Array.isArray(yearParam) ? yearParam[0] : yearParam;
@@ -215,9 +218,9 @@ export default async function TeamsPage({
 
   return (
     <PageShell
-      eyebrow="Team management"
-      title="Teams"
-      description="Browse the teams currently registered in the FIRST LEGO League platform."
+      eyebrow={t.teams.management}
+      title={t.teams.title}
+      description={t.teams.description}
       bannerClassName="teams-page-banner"
       panelClassName="teams-page-panel"
       heroAside={
@@ -230,7 +233,7 @@ export default async function TeamsPage({
             )}
           >
             <span className="teams-page-create-button__label">
-              Create new team
+              {t.teams.createNew}
             </span>
             <ArrowUpRight aria-hidden="true" />
           </Link>
@@ -242,45 +245,44 @@ export default async function TeamsPage({
 
         {!error && teams.length === 0 && (
           <EmptyState
-            title="No teams found"
-            description="There are currently no teams available to display."
+            title={t.empty.noTeams}
+            description={t.empty.noTeamsDescription}
           />
         )}
 
         {!error && teams.length > 0 && (
           <>
-            {/* Las animaciones visuales de esta pagina estan marcadas en src/css/teams-list.css */}
             <div className="teams-page-stats-grid">
               <StatCard
                 icon={MapPin}
-                label="Cities represented"
+                label={t.teams.citiesRepresented}
                 value={String(citiesCount)}
                 description={
                   citiesCount > 0
-                    ? "A broader geographic footprint is visible."
-                    : "City information is not available for the current teams."
+                    ? t.teams.citiesRepresentedDescYes
+                    : t.teams.citiesRepresentedDescNo
                 }
               />
 
               <StatCard
                 icon={Building2}
-                label="Schools and centers"
+                label={t.teams.schoolsAndCenters}
                 value={String(centersCount)}
                 description={
                   centersCount > 0
-                    ? "Educational institutions linked to the roster."
-                    : "No educational center has been registered yet."
+                    ? t.teams.schoolsAndCentersDescYes
+                    : t.teams.schoolsAndCentersDescNo
                 }
               />
 
               <StatCard
                 icon={Trophy}
-                label="Categories active"
+                label={t.teams.categoriesActive}
                 value={String(categoriesCount)}
                 description={
                   categoriesCount > 0
-                    ? `${challengeCount} Challenge and ${exploreCount} Explore teams in the current view.`
-                    : "Teams do not include category metadata yet."
+                    ? `${t.teams.challengeAnd} ${challengeCount} ${t.common.challenge} ${t.common.and} ${exploreCount} ${t.common.explore} ${t.common.teamsCurrentView}.`
+                    : t.teams.categoriesActiveDescNo
                 }
               />
             </div>

@@ -4,6 +4,7 @@ import { UsersService } from "@/api/userApi";
 import { useAuth } from "@/app/components/authentication";
 import { Avatar, AvatarFallback } from "@/app/components/avatar";
 import { buttonVariants } from "@/app/components/button";
+import { useTranslations } from "@/lib/languageContext";
 import { AUTH_COOKIE_NAME, clientAuthProvider } from "@/lib/authProvider";
 import { faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -22,6 +23,7 @@ function hasAuthCookie(): boolean {
 export default function Loginbar() {
     const router = useRouter();
     const { user, setUser } = useAuth();
+    const t = useTranslations();
 
     const [loadingUser, setLoadingUser] = useState(true);
 
@@ -76,7 +78,7 @@ export default function Loginbar() {
                         </Link>
                     ) : (
                         <span className="block min-w-0 truncate text-sm font-medium text-foreground">
-                            User
+                            {t.auth.user}
                         </span>
                     )}
                 </div>
@@ -84,7 +86,7 @@ export default function Loginbar() {
                     onClick={logout}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
-                    Logout
+                    {t.auth.logout}
                 </button>
             </div>
         );
@@ -99,7 +101,7 @@ export default function Loginbar() {
                             <FontAwesomeIcon icon={faUser} className="h-4 w-4" />
                         </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm">…</span>
+                    <span className="text-sm">...</span>
                 </div>
             </div>
         );
@@ -111,7 +113,7 @@ export default function Loginbar() {
                 href="/login"
                 className={buttonVariants({ variant: "default", size: "sm" })}
             >
-                Login
+                {t.auth.login}
             </Link>
         </div>
     );

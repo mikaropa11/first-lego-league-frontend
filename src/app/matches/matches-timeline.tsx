@@ -1,16 +1,19 @@
 import { Match } from "@/types/match";
 import { getEncodedResourceId } from "@/lib/halRoute";
 import { formatMatchTime } from "@/lib/matchUtils";
+import type { Translations } from "@/lib/i18n";
 import Link from "next/link";
 
 export function MatchesTimeline({
     matches,
     labels,
-    yearQuery
+    yearQuery,
+    t,
 }: Readonly<{
     matches: Match[];
     labels: Record<string, string>;
     yearQuery: string;
+    t: Translations;
 }>) {
     const getMinutes = (timeStr?: string | null) => {
         if (!timeStr) return 0;
@@ -26,7 +29,7 @@ export function MatchesTimeline({
         const end = getMinutes(match.endTime) || start + 30; // default 30m if no end time
         
         const tableHref = match.link("competitionTable")?.href;
-        let tableId = "Unassigned";
+        let tableId = t.matches.unassigned;
         if (tableHref) {
             const encoded = getEncodedResourceId(tableHref);
             if (encoded) {
@@ -38,7 +41,7 @@ export function MatchesTimeline({
         const uri = match.uri;
         const matchId = getEncodedResourceId(selfHref ?? uri);
         const key = selfHref ?? uri;
-        const label = labels[key] ?? "Unknown Team vs Unknown Team";
+        const label = labels[key] ?? t.matches.unknownTeams;
         return { 
             id: match.id ?? uri,
             startTime: match.startTime,
@@ -54,7 +57,7 @@ export function MatchesTimeline({
     const validMatches = matchesWithTime.filter(m => m.startMin > 0);
 
     if (validMatches.length === 0) {
-        return <div className="text-center p-8 text-muted-foreground border border-border rounded-md">No valid match times to display in calendar view.</div>;
+        return <div className="text-center p-8 text-muted-foreground border border-border rounded-md">{t.matches.noValidMatchTimes}</div>;
     }
 
     let minMin = Math.min(...validMatches.map(m => m.startMin));
@@ -75,7 +78,7 @@ export function MatchesTimeline({
                 <div className="w-20 flex-shrink-0 border-r border-border" />
                 {tables.map(table => (
                     <div key={table} className="flex-1 min-w-[200px] border-r border-border px-2 py-2 text-sm font-medium flex items-center justify-center truncate">
-                        {table === "Unassigned" ? "Unassigned" : table}
+                        {table === t.matches.unassigned ? t.matches.unassigned : table}
                     </div>
                 ))}
             </div>

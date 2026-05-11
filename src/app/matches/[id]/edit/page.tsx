@@ -6,6 +6,7 @@ import PageShell from "@/app/components/page-shell";
 import { Breadcrumb } from "@/app/components/breadcrumb";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { getTeamDisplayName } from "@/lib/teamUtils";
 import { CompetitionTable } from "@/types/competitionTable";
 import { AuthenticationError, NotFoundError, parseErrorMessage } from "@/types/errors";
@@ -255,13 +256,14 @@ function getInitialValues(data: MatchEditData) {
     };
 }
 
-function getMatchEditError(error: unknown) {
+function getMatchEditError(error: unknown, t: Awaited<ReturnType<typeof getServerTranslations>>) {
     return error instanceof NotFoundError
-        ? "This match does not exist."
+        ? t.matches.matchNotFound
         : parseErrorMessage(error);
 }
 
 export default async function EditMatchPage({ params }: Readonly<MatchEditPageProps>) {
+    const t = await getServerTranslations();
     const { id } = await params;
     const authorizationError = await getAdminAuthorizationError();
     let data: MatchEditData | null = null;
@@ -271,27 +273,27 @@ export default async function EditMatchPage({ params }: Readonly<MatchEditPagePr
         try {
             data = await fetchMatchEditData(id);
         } catch (e) {
-            error = getMatchEditError(e);
+            error = getMatchEditError(e, t);
         }
     }
 
     return (
         <PageShell
-            eyebrow="Competition schedule"
-            title={`Edit ${getMatchTitle(data?.match ?? null, id)}`}
-            description="Update the scheduled time, round, table, teams, and referee for this match."
+            eyebrow={t.matches.competitionSchedule}
+            title={t.matches.editMatchTitle.replace("{match}", getMatchTitle(data?.match ?? null, id))}
+            description={t.matches.updateMatchDescription}
         >
             <Breadcrumb
                 items={[
-                    { label: "Home", href: "/" },
-                    { label: "Matches", href: "/matches" },
+                    { label: t.breadcrumb.home, href: "/" },
+                    { label: t.breadcrumb.matches, href: "/matches" },
                     { label: getMatchTitle(data?.match ?? null, id), href: `/matches/${id}` },
-                    { label: "Edit" },
+                    { label: t.common.edit },
                 ]}
             />
 
             {error || !data ? (
-                <ErrorAlert message={error ?? "This match could not be loaded."} />
+                <ErrorAlert message={error ?? t.matches.matchCouldNotBeLoaded} />
             ) : (
                 <EditMatchForm
                     matchId={id}

@@ -1,0 +1,374 @@
+{
+  "metadata": {
+    "title": "First LEGO League Frontend - Hardcoded Strings for i18n",
+    "languages": ["en", "es", "ca"],
+    "totalStrings": 220,
+    "categories": ["headers", "titles", "descriptions", "buttons", "labels", "placeholders", "validation", "error_messages", "empty_states", "table_headers", "dialogs", "accessibility", "badges", "messages"],
+    "generatedAt": "2026-05-06"
+  },
+  "strings": {
+    "pages": {
+      "editions": {
+        "eyebrow": "Edition management",
+        "title": "Editions",
+        "description": "Browse the yearly editions currently registered in the FIRST LEGO League platform.",
+        "createButton": "Create new edition"
+      },
+      "teams": {
+        "category_challenge": "Challenge",
+        "category_explore": "Explore",
+        "defaultName": "Unnamed team",
+        "unknownTeam": "Unknown team",
+        "teamPending": "Team pending"
+      },
+      "matches": {
+        "title": "Matches",
+        "description": "View match schedules and results",
+        "teamFilterLabel": "Team filter",
+        "searchPlaceholder": "Search by team name...",
+        "searchButton": "Search",
+        "resetButton": "Reset",
+        "tableHeaders": {
+          "startTime": "Start time",
+          "endTime": "End time",
+          "teams": "Teams"
+        },
+        "liveBadge": "● LIVE",
+        "emptyState": "No matches available",
+        "emptyStateFiltered": "No matches found for this team",
+        "sectionTitle": "Match schedule",
+        "errorLoadingMatches": "We could not load the matches right now. Please try again in a few minutes.",
+        "errorLoadingMatchesPrefix": "We could not load the matches."
+      },
+      "scientificProjects": {
+        "defaultTitle": "Project",
+        "teamPending": "Team pending",
+        "teamReference": "Team"
+      },
+      "projectRooms": {
+        "eyebrow": "Judging",
+        "title": "Project Rooms",
+        "description": "Browse all project rooms and their assigned judges.",
+        "roomDirectory": "Room directory",
+        "allRooms": "All project rooms",
+        "helpText": "Each row shows the room number and the judge managing that room. Click a room to see its full details.",
+        "emptyStateTitle": "No project rooms found",
+        "emptyStateDescription": "There are currently no project rooms available.",
+        "tableHeaders": {
+          "room": "Room",
+          "judge": "Managing Judge",
+          "details": "Details"
+        },
+        "viewLink": "View →",
+        "defaultJudge": "—"
+      },
+      "volunteers": {
+        "eyebrow": "Volunteers directory",
+        "title": "Volunteers",
+        "description": "Manage the competition volunteers including judges, referees, and floaters.",
+        "searchJudges": "Search judges",
+        "searchReferees": "Search referees",
+        "searchFloaters": "Search floaters",
+        "noJudges": "No judges",
+        "noReferees": "No referees",
+        "noFloaters": "No floaters",
+        "emptyStateNoJudges": "There are currently no judges available.",
+        "emptyStateNoReferees": "There are currently no referees available.",
+        "emptyStateNoFloaters": "There are currently no floaters available."
+      },
+      "administrators": {
+        "eyebrow": "Administration",
+        "title": "Administrators",
+        "description": "Browse the administrators registered in the platform.",
+        "systemAdmins": "System administrators",
+        "directory": "Directory",
+        "helpText": "Select an administrator to view profile details.",
+        "emptyStateTitle": "No administrators found",
+        "emptyStateDescription": "There are currently no administrators in the system.",
+        "itemKicker": "Administrator"
+      },
+      "competitionTables": {
+        "eyebrow": "Administration",
+        "title": "Competition Tables",
+        "description": "Manage physical match tables and assign referees.",
+        "management": "Management",
+        "tablesSectionTitle": "Tables",
+        "emptyStateTitle": "No competition tables",
+        "emptyStateDescription": "Create the first table to get started.",
+        "tableHeaders": {
+          "table": "Table",
+          "referees": "Referees",
+          "actions": "Actions"
+        },
+        "noRefereesAssigned": "No referees assigned"
+      },
+      "users": {
+        "eyebrow": "People directory",
+        "title": "Users",
+        "description": "Browse the registered members of the platform and open each participant profile.",
+        "registeredUsers": "Registered users",
+        "directory": "Directory",
+        "helpText": "Select a user to view profile details.",
+        "searchPlaceholder": "Search by username or email…",
+        "emptyStateTitle": "No users found",
+        "emptyStateDescription": "There are currently no registered users in the system.",
+        "emptyStateNoMatch": "No users match",
+        "itemKicker": "User"
+      },
+      "newEdition": {
+        "eyebrow": "Competition archive",
+        "title": "New Edition",
+        "description": "Create a new FIRST LEGO League edition and publish its basic season details."
+      },
+      "newTeam": {
+        "eyebrow": "Team management",
+        "title": "New Team",
+        "description": "Create a team, add its members, and register one or two coaches in a single flow."
+      },
+      "login": {
+        "eyebrow": "Member access",
+        "title": "Login",
+        "description": "Sign in to access your profile and protected routes.",
+        "usernameLabel": "Username",
+        "passwordLabel": "Password",
+        "usernameRequired": "Username is required",
+        "passwordRequired": "Password is required",
+        "invalidCredentials": "Invalid username or password. Please try again."
+      },
+      "error": {
+        "eyebrow": "Unexpected Error",
+        "icon": "⚠️",
+        "heading": "Something went wrong",
+        "description": "An unexpected error occurred. You can try again or go back to the home page.",
+        "tryAgainButton": "Try Again",
+        "backHomeButton": "← Back to Home"
+      }
+    },
+    "navigation": {
+      "navbar": {
+        "brandRegion": "Catalunya Robotics",
+        "siteTitle": "First LEGO League",
+        "modulesDropdown": "Modules"
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "pageLabel": "Page",
+        "ariaLabel": "Pagination"
+      },
+      "breadcrumb": {
+        "ariaLabel": "Breadcrumb"
+      }
+    },
+    "forms": {
+      "memberForm": {
+        "nameLabel": "Name",
+        "roleLabel": "Role",
+        "birthDateLabel": "Birth Date",
+        "genderLabel": "Gender",
+        "tshirtSizeLabel": "T-Shirt Size",
+        "namePlaceholder": "e.g. Albert"
+      },
+      "administratorForm": {
+        "usernameLabel": "Username",
+        "emailLabel": "Email",
+        "passwordLabel": "Password",
+        "usernamePlaceholder": "e.g. admin_jdoe",
+        "emailPlaceholder": "e.g. admin@example.com",
+        "passwordPlaceholder": "••••••••",
+        "allFieldsRequired": "All fields are required.",
+        "invalidEmail": "Please enter a valid email address.",
+        "creatingState": "Creating...",
+        "createButton": "Create administrator"
+      },
+      "competitionTableForm": {
+        "title": "Create Competition Table",
+        "description": "Enter a unique identifier for the new table (e.g. \"Table-A\", \"Red Table\").",
+        "tableIdLabel": "Table identifier",
+        "tableIdPlaceholder": "e.g. Table-A",
+        "tableIdRequired": "Table identifier is required.",
+        "creatingState": "Creating...",
+        "createButton": "Create table"
+      },
+      "editProfileForm": {
+        "eyebrow": "Account settings",
+        "sectionTitle": "Edit profile",
+        "description": "Update your email address or password.",
+        "emailLabel": "Email",
+        "newPasswordLabel": "New password",
+        "confirmPasswordLabel": "Confirm new password",
+        "leaveBankPassword": "Leave blank to keep current password",
+        "repeatPassword": "Repeat new password",
+        "emailMaxLength": "Email must be 254 characters or fewer",
+        "invalidEmail": "Invalid email address",
+        "minPassword": "Minimum 8 characters",
+        "maxPassword": "Maximum 256 characters",
+        "passwordMismatch": "Passwords do not match",
+        "noChanges": "No changes to save.",
+        "successMessage": "Profile updated successfully."
+      },
+      "mediaUploadForm": {
+        "urlPlaceholder": "URL",
+        "imageOption": "Image",
+        "videoOption": "Video",
+        "deleteButton": "Delete",
+        "addRowButton": "+ Add Row",
+        "savingState": "Saving...",
+        "submitButton": "Submit Batch",
+        "successMessage": "Media uploaded successfully!",
+        "errorPrefix": "Error: "
+      },
+      "matchForm": {
+        "noItemsAvailable": "are available yet. Create them in the backend first."
+      }
+    },
+    "dialogs": {
+      "deleteMember": {
+        "title": "Remove Member",
+        "textPrefix": "Are you sure you want to remove ",
+        "textSuffix": "?",
+        "deleteButton": "Delete",
+        "deletingState": "Removing..."
+      },
+      "deleteAdministrator": {
+        "title": "Delete administrator",
+        "textPrefix": "Are you sure you want to delete ",
+        "textSuffix": "? This action cannot be undone.",
+        "deleteButton": "Delete administrator",
+        "deletingState": "Deleting..."
+      },
+      "deleteVolunteer": {
+        "title": "Delete Volunteer",
+        "textPrefix": "Are you sure you want to remove ",
+        "textSuffix": " from the volunteers directory?",
+        "deleteButton": "Delete",
+        "deletingState": "Deleting..."
+      },
+      "confirmDestructive": {
+        "cancelButton": "Cancel",
+        "defaultPendingLabel": "Working..."
+      }
+    },
+    "buttons": {
+      "common": {
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete",
+        "edit": "Edit",
+        "submit": "Submit",
+        "tryAgain": "Try again",
+        "create": "Create",
+        "close": "Close"
+      },
+      "search": {
+        "defaultPlaceholder": "Search...",
+        "teamSearch": "Search by team name..."
+      },
+      "actions": {
+        "addMember": "Add Member",
+        "createAdministrator": "Create administrator",
+        "createTable": "Create table"
+      }
+    },
+    "tables": {
+      "matches": {
+        "startTime": "Start time",
+        "endTime": "End time",
+        "teams": "Teams"
+      },
+      "leaderboard": {
+        "position": "#",
+        "team": "Team",
+        "totalScore": "Total Score",
+        "matchesPlayed": "Matches Played"
+      },
+      "projectRooms": {
+        "room": "Room",
+        "judge": "Managing Judge",
+        "details": "Details"
+      },
+      "competitionTables": {
+        "table": "Table",
+        "referees": "Referees",
+        "actions": "Actions"
+      }
+    },
+    "emptyStates": {
+      "noTeams": "No teams found",
+      "noUsers": "No users found",
+      "noAdministrators": "No administrators found",
+      "noProjectRooms": "No project rooms found",
+      "noMatches": "No matches available",
+      "noCompetitionTables": "No competition tables",
+      "emptyDescription": "There are currently no items available."
+    },
+    "validation": {
+      "fieldRequired": "Field is required",
+      "invalidEmail": "Invalid email address",
+      "passwordMismatch": "Passwords do not match",
+      "minCharacters": "Minimum {count} characters",
+      "maxCharacters": "Maximum {count} characters",
+      "usernameRequired": "Username is required",
+      "passwordRequired": "Password is required"
+    },
+    "errors": {
+      "unexpectedError": "An unexpected error occurred",
+      "tryAgain": "Please try again",
+      "failedToLoad": "Failed to load",
+      "unableToSave": "Unable to save",
+      "noChanges": "No changes to save",
+      "invalidCredentials": "Invalid username or password. Please try again.",
+      "maxRefereesReached": "This table already has the maximum of 3 referees."
+    },
+    "accessibility": {
+      "pagination": "Pagination",
+      "breadcrumb": "Breadcrumb",
+      "changeLanguage": "Change language",
+      "closeMenu": "Close menu",
+      "toggleDarkMode": "Toggle dark mode",
+      "copyEmail": "Copy email",
+      "openMedia": "Open media {number}",
+      "scrollLeft": "Scroll left",
+      "scrollRight": "Scroll right",
+      "previousMedia": "Previous media",
+      "nextMedia": "Next media",
+      "closeMediaViewer": "Close media viewer",
+      "goToSlide": "Go to {number}",
+      "searchProjects": "Search scientific projects by team name",
+      "deleteConfirmation": "Delete {name}",
+      "editItem": "Edit {name}",
+      "cannotDeleteOwnAccount": "You cannot delete your own account"
+    },
+    "badges": {
+      "live": "● LIVE",
+      "expert": "Expert"
+    },
+    "messages": {
+      "success": {
+        "profileUpdated": "Profile updated successfully.",
+        "administratorDeleted": "Administrator deleted successfully.",
+        "administratorCreated": "Administrator {username} created successfully.",
+        "memberAdded": "Member added successfully",
+        "mediaUploaded": "Media uploaded successfully!"
+      }
+    },
+    "labels": {
+      "categoryChallenge": "Challenge",
+      "categoryExplore": "Explore",
+      "defaultJudge": "—",
+      "registeredUsers": "Registered users",
+      "systemAdministrators": "System administrators",
+      "managementSection": "Management",
+      "noRefereesAssigned": "No referees assigned",
+      "roomLabel": "Room",
+      "unnamedMember": "Unnamed member",
+      "unknownTeam": "Unknown Team"
+    },
+    "helpText": {
+      "projectRoomsDescription": "Each row shows the room number and the judge managing that room. Click a room to see its full details.",
+      "selectAdminToView": "Select an administrator to view profile details.",
+      "selectUserToView": "Select a user to view profile details.",
+      "createTableInstructions": "Enter a unique identifier for the new table (e.g. \"Table-A\", \"Red Table\")."
+    }
+  }
+}
