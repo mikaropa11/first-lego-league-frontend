@@ -10,6 +10,7 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     ".github/**",
+    "first-lego-league-frontend/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

@@ -1,6 +1,5 @@
 import { AwardsService } from "@/api/awardApi";
 import { EditionsService } from "@/api/editionApi";
-import { fetchHalResource } from "@/api/halClient";
 import { MatchesService } from "@/api/matchesApi";
 import { ScientificProjectsService } from "@/api/scientificProjectApi";
 import { TeamsService } from "@/api/teamApi";
@@ -12,12 +11,10 @@ import ErrorAlert from "@/app/components/error-alert";
 import TeamEditSection from "@/app/components/team-edit-section";
 import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
-import { CompetitionTable } from "@/types/competitionTable";
 import { Award } from "@/types/award";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import { Match } from "@/types/match";
 import { ScientificProject } from "@/types/scientificProject";
-import { Round } from "@/types/round";
 import { Team, TeamCoach, TeamMember, TeamMemberSnapshot } from "@/types/team";
 import { User } from "@/types/user";
 import AwardSection, { AwardItem } from "./_award-section";
@@ -101,7 +98,7 @@ function getOpponentName(teamA: Team | null, teamB: Team | null, targetId: strin
     return undefined;
 }
 
-async function resolveMatchForTeam(match: Match, targetId: string) {
+async function resolveMatchForTeam(match: Match, targetId: string, matchesService: MatchesService) {
     const matchId = match.uri ? match.uri.split("/").pop() : String(match.id);
 
     if (!matchId) {
@@ -110,10 +107,10 @@ async function resolveMatchForTeam(match: Match, targetId: string) {
 
     try {
         const [teamA, teamB, competitionTable, round] = await Promise.all([
-            fetchMatchLink(match, "teamA", () => fetchHalResource<Team>(`/matches/${encodeURIComponent(matchId)}/teamA`, serverAuthProvider)),
-            fetchMatchLink(match, "teamB", () => fetchHalResource<Team>(`/matches/${encodeURIComponent(matchId)}/teamB`, serverAuthProvider)),
-            fetchMatchLink(match, "competitionTable", () => fetchHalResource<CompetitionTable>(`/matches/${encodeURIComponent(matchId)}/competitionTable`, serverAuthProvider)),
-            fetchMatchLink(match, "round", () => fetchHalResource<Round>(`/matches/${encodeURIComponent(matchId)}/round`, serverAuthProvider)),
+            fetchMatchLink(match, "teamA", () => matchesService.getMatchTeamA(matchId)),
+            fetchMatchLink(match, "teamB", () => matchesService.getMatchTeamB(matchId)),
+            fetchMatchLink(match, "competitionTable", () => matchesService.getMatchCompetitionTable(matchId)),
+            fetchMatchLink(match, "round", () => matchesService.getMatchRound(matchId)),
         ]);
 
         const opponent = getOpponentName(teamA, teamB, targetId);
@@ -230,7 +227,7 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
 
         if (matchesResult.status === "fulfilled") {
             const resolvedMatches = await Promise.all(
-                matchesResult.value.map((match) => resolveMatchForTeam(match, String(id)))
+                matchesResult.value.map((match) => resolveMatchForTeam(match, String(id), matchesService))
             );
 
             teamMatchesData = resolvedMatches

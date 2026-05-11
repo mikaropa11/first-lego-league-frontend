@@ -3,9 +3,10 @@
 import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
 import {
     FavoriteItem,
+    FAVORITES_STORAGE_KEY,
     isFavorite,
-    loadFavorites,
     removeFavorite,
+    parseFavorites,
     saveFavorites,
     upsertFavorite,
 } from "@/lib/favorites";
@@ -39,12 +40,25 @@ function subscribeToFavoritesChange(onStoreChange: () => void) {
     };
 }
 
+function getFavoritesSnapshot() {
+    if (typeof window === "undefined") {
+        return "[]";
+    }
+
+    return window.localStorage.getItem(FAVORITES_STORAGE_KEY) ?? "[]";
+}
+
+function parseFavoritesSnapshot(snapshot: string): FavoriteItem[] {
+    return parseFavorites(snapshot);
+}
+
 export function FavoritesProvider({ children }: Readonly<{ children: React.ReactNode }>) {
-    const favorites = useSyncExternalStore(
+    const favoritesSnapshot = useSyncExternalStore(
         subscribeToFavoritesChange,
-        loadFavorites,
-        () => [],
+        getFavoritesSnapshot,
+        () => "[]",
     );
+    const favorites = useMemo(() => parseFavoritesSnapshot(favoritesSnapshot), [favoritesSnapshot]);
 
     function persist(nextFavorites: FavoriteItem[]) {
         saveFavorites(nextFavorites);

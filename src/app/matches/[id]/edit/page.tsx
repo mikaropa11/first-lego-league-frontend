@@ -1,6 +1,5 @@
 import { MatchesService } from "@/api/matchesApi";
 import { CompetitionTableService } from "@/api/competitionTableApi";
-import { fetchHalResource } from "@/api/halClient";
 import { RoundsService } from "@/api/roundsApi";
 import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
@@ -209,11 +208,11 @@ async function fetchMatchEditData(id: string): Promise<MatchEditData> {
         competitionTableService.getTables(),
         competitionTableService.getReferees(),
         teamsService.getTeams(),
-        getOptionalRelation(fetchHalResource<Round>(`/matches/${encodeURIComponent(id)}/round`, serverAuthProvider)),
-        getOptionalRelation(fetchHalResource<CompetitionTable>(`/matches/${encodeURIComponent(id)}/competitionTable`, serverAuthProvider)),
-        getOptionalRelation(fetchHalResource<Referee>(`/matches/${encodeURIComponent(id)}/referee`, serverAuthProvider)),
-        getOptionalRelation(fetchHalResource<Team>(`/matches/${encodeURIComponent(id)}/teamA`, serverAuthProvider)),
-        getOptionalRelation(fetchHalResource<Team>(`/matches/${encodeURIComponent(id)}/teamB`, serverAuthProvider)),
+        getOptionalRelation(matchesService.getMatchRound(id)),
+        getOptionalRelation(matchesService.getMatchCompetitionTable(id)),
+        getOptionalRelation(matchesService.getMatchReferee(id)),
+        getOptionalRelation(matchesService.getMatchTeamA(id)),
+        getOptionalRelation(matchesService.getMatchTeamB(id)),
     ]);
 
     const selectedRound = matchRound ? getRoundOption(matchRound) : null;

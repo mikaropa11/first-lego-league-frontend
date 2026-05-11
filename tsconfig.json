@@ -39,5 +39,7 @@
   "exclude": [
     "node_modules",
     ".github",
+    "first-lego-league-frontend",
+    "first-lego-league-frontend/**"
   ]
 }

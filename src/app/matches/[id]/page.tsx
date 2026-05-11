@@ -1,7 +1,6 @@
 import { EditionsService } from "@/api/editionApi";
 import { API_BASE_URL } from "@/api/halClient";
 import { MatchesService } from "@/api/matchesApi";
-import { fetchHalCollection, fetchHalResource } from "@/api/halClient";
 import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
 import FavoriteActionButton from "@/app/components/favorite-action-button";
@@ -183,7 +182,7 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
 
         const teamsService = new TeamsService(serverAuthProvider);
         const editionsService = new EditionsService(serverAuthProvider);
-        const roundDetailsPromise = fetchHalResource<Round>(`/matches/${encodeURIComponent(id)}/round`, serverAuthProvider).then((resolvedRound) => {
+        const roundDetailsPromise = service.getMatchRound(id).then((resolvedRound) => {
             const editionUri =
                 resolvedRound.link("edition")?.href ??
                 (resolvedRound.uri ? `${resolvedRound.uri}/edition` : null);
@@ -201,7 +200,7 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
             });
         }).catch((e) => {
             console.error("Failed to fetch match round:", e);
-            return { round: null as Round | null, edition: null as Edition | null };
+            return { round: null, edition: null as Edition | null };
         });
 
         const [, roundDetails] = await Promise.all([
@@ -212,21 +211,21 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                 teamsError = `Could not load team information. ${parseErrorMessage(e)}`;
             }),
             roundDetailsPromise,
-            fetchHalResource<Team>(`/matches/${encodeURIComponent(id)}/teamA`, serverAuthProvider).then((t) => {
+            service.getMatchTeamA(id).then((t) => {
                 formTeamA = t;
                 const raw = t as unknown as { name?: string; id?: string; uri?: string };
                 teamADisplayName = raw.name ?? raw.id ?? "Team A";
                 const href = t.link("self")?.href ?? raw.uri ?? "";
                 teamAId = decodeURIComponent(href.split("/").pop() ?? "");
             }).catch(() => null),
-            fetchHalResource<Team>(`/matches/${encodeURIComponent(id)}/teamB`, serverAuthProvider).then((t) => {
+            service.getMatchTeamB(id).then((t) => {
                 formTeamB = t;
                 const raw = t as unknown as { name?: string; id?: string; uri?: string };
                 teamBDisplayName = raw.name ?? raw.id ?? "Team B";
                 const href = t.link("self")?.href ?? raw.uri ?? "";
                 teamBId = decodeURIComponent(href.split("/").pop() ?? "");
             }).catch(() => null),
-            fetchHalCollection<MatchResult>(`/matchResults/search/findByMatch?match=${encodeURIComponent(matchUri)}`, serverAuthProvider, "matchResults").then((r) => {
+            service.getMatchResults(matchUri).then((r) => {
                 matchResults = r;
             }).catch(() => null),
         ]);
