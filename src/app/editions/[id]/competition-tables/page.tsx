@@ -5,6 +5,7 @@ import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { parseErrorMessage, NotFoundError } from "@/types/errors";
 import type { EditionCompetitionTable } from "@/types/competitionTableSchedule";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,12 @@ export default async function CompetitionTablesPage(props: Readonly<CompetitionT
                             <div className="mb-4 space-y-1">
                                 <div className="page-eyebrow">Table</div>
                                 <h2 id={`table-${table.identifier}-heading`} className="section-title">
-                                    {table.identifier}
+                                    <Link
+                                        href={`/competition-tables/${encodeURIComponent(table.identifier)}`}
+                                        className="hover:underline"
+                                    >
+                                        {table.identifier}
+                                    </Link>
                                 </h2>
                             </div>
 

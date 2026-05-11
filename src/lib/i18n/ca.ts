@@ -239,6 +239,7 @@ export const ca: Translations = {
       "No hi ha edicions per a l'estat seleccionat. Prova amb un altre any, seu o estat.",
     noEditionsAvailable:
       "Actualment no hi ha edicions disponibles per mostrar.",
+    editionSelector: "Totes les edicions",
   },
   matches: {
     ...en.matches,

@@ -3,6 +3,7 @@
 @import "../css/editions-list.css";
 @import "../css/scientific-projects-list.css";
 @import "../css/teams-list.css";
+@import "../css/matches-list.css";
 
 @custom-variant dark (&:is(.dark *));
 

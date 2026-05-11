@@ -240,6 +240,7 @@ export interface Translations {
     noEditionsMatch: string;
     noEditionsForState: string;
     noEditionsAvailable: string;
+    editionSelector: string;
   };
 
   // ============ MATCHES PAGE ============

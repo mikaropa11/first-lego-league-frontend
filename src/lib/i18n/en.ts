@@ -242,6 +242,7 @@ export const en: Translations = {
       "No editions found for the selected state. Try a different year, venue or state.",
     noEditionsAvailable:
       "There are currently no editions available to display.",
+    editionSelector: "All editions",
   },
   matches: {
     title: "Matches",

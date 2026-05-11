@@ -17,7 +17,9 @@ test.describe("matches create access", () => {
         await loginViaUi(page, getAdminUser());
         await page.goto("/matches");
 
-        const createLink = page.getByRole("link", { name: "+ Create" });
+        await expect(page.getByRole("heading", { name: "Matches", level: 1 })).toBeVisible();
+
+        const createLink = page.getByRole("link", { name: /^New match$/i });
         await expect(createLink).toBeVisible();
         await createLink.click();
 
@@ -28,7 +30,8 @@ test.describe("matches create access", () => {
     test("public users cannot access the create match page", async ({ page }) => {
         await page.goto("/matches");
 
-        await expect(page.getByRole("link", { name: "+ Create" })).toHaveCount(0);
+        await expect(page.getByRole("heading", { name: "Matches", level: 1 })).toBeVisible();
+        await expect(page.getByRole("link", { name: /^New match$/i })).toHaveCount(0);
 
         await page.goto("/matches/new");
         await expect(page).toHaveURL(/\/login$/);

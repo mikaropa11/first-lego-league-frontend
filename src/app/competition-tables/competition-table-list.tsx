@@ -11,6 +11,7 @@ import { parseErrorMessage } from "@/types/errors";
 import { useTranslations } from "@/lib/languageContext";
 import CreateCompetitionTableDialog from "./create-competition-table-dialog";
 import AssignRefereeDialog, { RefereeOption } from "./assign-referee-dialog";
+import Link from "next/link";
 
 interface CompetitionTableListProps {
     tables: string[];
@@ -75,6 +76,10 @@ export default function CompetitionTableList({ tables, refereesByTable, allRefer
                     <table className="w-full text-sm">
                         <thead className="bg-muted/50">
                             <tr>
+                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Table</th>
+                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Details</th>
+                                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Referees</th>
+                                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
                                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t.competitionTables.tableName}</th>
                                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t.competitionTables.referees}</th>
                                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">{t.common.actions}</th>
@@ -86,6 +91,14 @@ export default function CompetitionTableList({ tables, refereesByTable, allRefer
                                 return (
                                     <tr key={tableId} className="bg-card hover:bg-muted/30 transition-colors">
                                         <td className="px-4 py-3 font-medium">{tableId}</td>
+                                        <td className="px-4 py-3 font-medium">
+                                            <Link
+                                                href={`/competition-tables/${encodeURIComponent(tableId)}`}
+                                                className="text-accent hover:underline"
+                                            >
+                                                Open
+                                            </Link>
+                                        </td>
                                         <td className="px-4 py-3 text-muted-foreground">
                                             {referees.length === 0 ? (
                                                 <span className="text-xs italic">{t.competitionTables.noRefereesAssigned}</span>

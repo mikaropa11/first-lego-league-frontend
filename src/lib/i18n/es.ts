@@ -246,6 +246,7 @@ export const es: Translations = {
       "No hay ediciones para el estado seleccionado. Prueba con otro año, sede o estado.",
     noEditionsAvailable:
       "Actualmente no hay ediciones disponibles para mostrar.",
+    editionSelector: "Todas las ediciones",
   },
   matches: {
     ...en.matches,

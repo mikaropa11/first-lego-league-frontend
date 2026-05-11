@@ -1,15 +1,21 @@
+import { fetchHalResource, mergeHal } from "@/api/halClient";
 import { ProjectRoomsService } from "@/api/projectRoomApi";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { getEncodedResourceId } from "@/lib/halRoute";
 import { parseErrorMessage } from "@/types/errors";
 import type { ProjectRoom } from "@/types/projectRoom";
-import { getEncodedResourceId } from "@/lib/halRoute";
-import { mergeHal } from "@/api/halClient";
 import type { Volunteer } from "@/types/volunteer";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
+interface RoomWithJudge {
+    readonly room: ProjectRoom;
+    readonly judge: Volunteer | null;
+    readonly roomNumber: string | number;
+}
 
 export default async function ProjectRoomsPage() {
     const auth = await serverAuthProvider.getAuth();
@@ -26,6 +32,24 @@ export default async function ProjectRoomsPage() {
         console.error("Failed to fetch project rooms:", e);
         error = parseErrorMessage(e);
     }
+
+    const roomsWithJudges: RoomWithJudge[] = await Promise.all(
+        rooms.map(async (room, index) => {
+            const judgeHref = room.link("managedByJudge")?.href;
+            const judgeEmbedded = room.embedded("managedByJudge");
+            const judge = judgeHref
+                ? await fetchHalResource<Volunteer>(judgeHref, serverAuthProvider).catch(() => null)
+                : judgeEmbedded
+                    ? mergeHal<Volunteer>(judgeEmbedded)
+                    : null;
+
+            return {
+                room,
+                judge,
+                roomNumber: room.roomNumber ?? index + 1,
+            };
+        })
+    );
 
     return (
         <PageShell
@@ -44,49 +68,47 @@ export default async function ProjectRoomsPage() {
 
                 {error && <ErrorAlert message={error} />}
 
-                {!error && rooms.length === 0 && (
+                {!error && roomsWithJudges.length === 0 && (
                     <EmptyState
                         title="No project rooms found"
                         description="There are currently no project rooms available."
                     />
                 )}
 
-                {!error && rooms.length > 0 && (
-                    <div className="rounded-lg border border-border overflow-hidden">
+                {!error && roomsWithJudges.length > 0 && (
+                    <div className="overflow-hidden rounded-lg border border-border">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b border-border bg-muted/50">
                                     <th className="px-5 py-3 text-left font-medium text-muted-foreground">Room</th>
                                     <th className="px-5 py-3 text-left font-medium text-muted-foreground">Managing Judge</th>
                                     <th className="px-5 py-3 text-right font-medium text-muted-foreground">Details</th>
-                                 </tr>
+                                </tr>
                             </thead>
                             <tbody>
-                                {rooms.map((room, index) => {
+                                {roomsWithJudges.map(({ room, judge, roomNumber }, index) => {
                                     const id = room.uri ? getEncodedResourceId(room.uri) : String(index + 1);
-                                    const judgeEmbedded = room.embedded('managedByJudge');
-                                    const judge = judgeEmbedded ? mergeHal<Volunteer>(judgeEmbedded) : null;
-                                    const judgeName = judge?.name ?? "—";
-                                    const roomNumber = index + 1;
+                                    const judgeName = judge?.name ?? "-";
+
                                     return (
                                         <tr
                                             key={room.uri ?? index}
-                                            className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                                            className="border-b border-border last:border-0 transition-colors hover:bg-muted/30"
                                         >
                                             <td className="px-5 py-4 font-semibold text-foreground">
                                                 Room {roomNumber}
-                                             </td>
+                                            </td>
                                             <td className="px-5 py-4 text-muted-foreground">
                                                 {judgeName}
-                                             </td>
+                                            </td>
                                             <td className="px-5 py-4 text-right">
                                                 <Link
                                                     href={`/project-rooms/${id}`}
-                                                    className="text-accent font-medium hover:underline"
+                                                    className="font-medium text-accent hover:underline"
                                                 >
-                                                    View →
+                                                    {"View ->"}
                                                 </Link>
-                                             </td>
+                                            </td>
                                         </tr>
                                     );
                                 })}

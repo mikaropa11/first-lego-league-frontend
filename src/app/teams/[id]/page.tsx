@@ -4,9 +4,10 @@ import { MatchesService } from "@/api/matchesApi";
 import { ScientificProjectsService } from "@/api/scientificProjectApi";
 import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
+import { Breadcrumb } from "@/app/components/breadcrumb";
+import FavoriteActionButton from "@/app/components/favorite-action-button";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
-import { Breadcrumb } from "@/app/components/breadcrumb";
 import TeamEditSection from "@/app/components/team-edit-section";
 import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
@@ -16,6 +17,7 @@ import { Match } from "@/types/match";
 import { ScientificProject } from "@/types/scientificProject";
 import { Team, TeamCoach, TeamMember, TeamMemberSnapshot } from "@/types/team";
 import { User } from "@/types/user";
+import AwardSection, { AwardItem } from "./_award-section";
 import TeamAwardsSection from "./_team-awards-section";
 import CoachesDisplay from "./coaches-display";
 import TeamFloatersSection from "./team-floaters-section";
@@ -24,6 +26,21 @@ import TournamentItinerary, { ScheduleItem } from "./tournament-itinerary";
 
 interface TeamDetailPageProps {
     readonly params: Promise<{ id: string }>;
+}
+
+interface EditionOption {
+    readonly uri?: string;
+    readonly year?: number;
+    readonly venueName?: string;
+}
+
+interface AwardSnapshot {
+    readonly id?: string;
+    readonly uri?: string;
+    readonly name?: string;
+    readonly title?: string;
+    readonly category?: string;
+    readonly edition?: string;
 }
 
 function toTeamMemberSnapshot(member: TeamMember): TeamMemberSnapshot {
@@ -53,6 +70,17 @@ function getTeamEditionUri(team: Team): string | null {
 
     const edition = Reflect.get(team, "edition");
     return typeof edition === "string" && edition.length > 0 ? edition : null;
+}
+
+function toAwardSnapshot(award: Award): AwardSnapshot {
+    return {
+        id: String(Reflect.get(award, "id") ?? ""),
+        uri: award.uri ?? award.link("self")?.href ?? undefined,
+        name: award.name,
+        title: award.title,
+        category: award.category,
+        edition: award.edition,
+    };
 }
 
 async function fetchMatchLink<T>(match: Match, rel: string, fetcher: () => Promise<T>): Promise<T | null> {
@@ -117,13 +145,13 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
     let members: TeamMember[] = [];
     let scientificProjects: ScientificProject[] = [];
     let awards: Award[] = [];
+    let editions: EditionOption[] = [];
     let editionYearStr: string | undefined;
     let teamEditionUri: string | null = null;
     let teamMatchesData: Array<{ match: Match; table: string; opponent?: string; round?: string }> = [];
 
     let error: string | null = null;
     let membersError: string | null = null;
-    let scientificProjectsError: string | null = null;
     let awardsError: string | null = null;
     let matchesError: string | null = null;
 
@@ -157,6 +185,18 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
             }
         }
 
+        if (isAdminUser) {
+            try {
+                editions = (await editionsService.getEditions()).map((item) => ({
+                    uri: item.uri,
+                    year: item.year,
+                    venueName: item.venueName,
+                }));
+            } catch (e) {
+                console.error("Error loading editions:", e);
+            }
+        }
+
         const [membersResult, scientificProjectsResult, matchesResult, awardsResult] = await Promise.allSettled([
             Promise.all([
                 teamsService.getTeamCoach(id),
@@ -183,8 +223,6 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
 
         if (scientificProjectsResult.status === "fulfilled") {
             scientificProjects = scientificProjectsResult.value;
-        } else {
-            scientificProjectsError = parseErrorMessage(scientificProjectsResult.reason);
         }
 
         if (matchesResult.status === "fulfilled") {
@@ -223,14 +261,9 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
                 coach.emailAddress?.trim().toLowerCase() === currentUserEmail
         );
 
-    const coachName =
-        coaches.length > 0
-            ? coaches
-                .map((coach) => coach.name ?? coach.emailAddress ?? "Unnamed coach")
-                .join(", ")
-            : "No coach assigned";
-
     const initialMembers = members.map(toTeamMemberSnapshot);
+    const awardSnapshots = awards.map(toAwardSnapshot);
+    const favoriteTeamLabel = teamDisplayName ?? team.id ?? "Team";
 
     const membersKey = initialMembers
         .map((member) => member.uri ?? String(member.id ?? member.name ?? ""))
@@ -287,7 +320,16 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
                         <h1 className="text-2xl font-semibold text-foreground">
                             {teamDisplayName ?? "Unnamed team"}
                         </h1>
-                        <TeamShareButton teamName={teamDisplayName ?? "Unnamed team"} />
+                        <div className="flex flex-wrap items-center gap-2">
+                            <TeamShareButton teamName={teamDisplayName ?? "Unnamed team"} />
+                            <FavoriteActionButton
+                                type="team"
+                                id={String(id)}
+                                label={favoriteTeamLabel}
+                                href={`/teams/${id}`}
+                                secondaryLabel={team.city ?? editionYearStr}
+                            />
+                        </div>
                     </div>
 
                     <div className="mb-6 space-y-1 text-sm text-muted-foreground">
@@ -328,7 +370,8 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
                     <TeamAwardsSection
                         teamId={id}
                         teamName={teamDisplayName ?? team.id ?? "Team"}
-                        awards={awards}
+                        awards={awardSnapshots}
+                        editions={editions}
                         awardsError={awardsError}
                         isAdminUser={isAdminUser}
                         teamEditionUri={teamEditionUri}
@@ -355,6 +398,14 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
 
                     {membersError && <ErrorAlert message={membersError} />}
 
+                    {awardsError && <ErrorAlert message={awardsError} />}
+                    {awards.length > 0 && !awardsError && (() => {
+                        const awardItems: AwardItem[] = awards.map((award, index) => ({
+                            key: award.link("self")?.href ?? award.uri ?? `${award.name ?? "award"}-${index}`,
+                            name: award.name ?? "Unnamed award",
+                        }));
+                        return <AwardSection awards={awardItems} />;
+                    })()}
                     <section className="mt-8">
                         <h2 className="mb-4 text-xl font-semibold">Tournament Itinerary</h2>
 

@@ -3,6 +3,7 @@ import { API_BASE_URL } from "@/api/halClient";
 import { MatchesService } from "@/api/matchesApi";
 import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
+import FavoriteActionButton from "@/app/components/favorite-action-button";
 import { buttonVariants } from "@/app/components/button";
 import { Breadcrumb } from "@/app/components/breadcrumb";
 import ErrorAlert from "@/app/components/error-alert";
@@ -25,6 +26,7 @@ import { Pencil } from "lucide-react";
 import Link from "next/link";
 import MatchDeleteSection from "./match-delete-section";
 import RecordResultForm from "./record-result-form";
+import { isEditionActive } from "@/lib/editionStateGuards";
 
 export const dynamic = "force-dynamic";
 
@@ -269,6 +271,19 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
             eyebrow={t.matches.matchDetails}
             title={getMatchTitle(match, id)}
             description={displayState ? `Status: ${displayState}` : undefined}
+            heroAside={
+                match ? (
+                    <div className="flex flex-col items-stretch gap-2">
+                        <FavoriteActionButton
+                            type="match"
+                            id={String(id)}
+                            label={getMatchTitle(match, id)}
+                            href={`/matches/${id}${yearQuery}`}
+                            secondaryLabel={displayEdition}
+                        />
+                    </div>
+                ) : undefined
+            }
         >
             <Breadcrumb
                 items={[
@@ -280,7 +295,7 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
 
             {matchError && <ErrorAlert message={matchError} />}
 
-            {!matchError && match && isAdmin(currentUser) && (
+            {!matchError && match && isAdmin(currentUser) && isEditionActive(edition?.state) && (
                 <div className="flex flex-wrap justify-end gap-3">
                     <Link href={`/matches/${id}/edit`} className={buttonVariants({ variant: "secondary" })}>
                         <Pencil aria-hidden="true" />
@@ -378,7 +393,11 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                                     {matchResults.length > 0 ? t.matches.editResult : t.matches.recordResult}
                                 </h2>
                             </div>
-                            {matchResults.length > 0 ? (
+                            {!isEditionActive(edition?.state) ? (
+                                <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                                    This action is available only while the edition is active (OPEN).
+                                </div>
+                            ) : matchResults.length > 0 ? (
                                 <RecordResultForm
                                     matchId={numericMatchId}
                                     teamAId={teamAId}

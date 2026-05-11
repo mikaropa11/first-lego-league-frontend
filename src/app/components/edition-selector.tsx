@@ -5,6 +5,7 @@ import { clientAuthProvider } from "@/lib/authProvider";
 import { Edition } from "@/types/edition";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useTranslations } from "@/lib/languageContext";
 
 export default function EditionSelector() {
     const [editions, setEditions] = useState<Edition[]>([]);
@@ -13,6 +14,7 @@ export default function EditionSelector() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const currentYear = searchParams.get("year");
+    const t = useTranslations();
 
     useEffect(() => {
         const fetchEditions = async () => {
@@ -67,7 +69,7 @@ export default function EditionSelector() {
             className="border-input h-10 border bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/35 focus-visible:ring-[3px]"
             aria-label="Edition"
         >
-            <option value="">All editions</option>
+            <option value="">{t.editions.editionSelector}</option>
             {editions.map((edition) => (
                 <option key={edition.uri} value={edition.year}>
                     {edition.year} {edition.venueName ? "- " + edition.venueName : ""}

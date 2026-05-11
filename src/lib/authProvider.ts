@@ -1,4 +1,37 @@
+import { setCookie } from "cookies-next";
+
 export const AUTH_COOKIE_NAME = "APP_AUTH";
+
+export function toBase64(value: string) {
+    const bytes = new TextEncoder().encode(value);
+    let binary = "";
+    for (const byte of bytes) {
+      binary += String.fromCodePoint(byte);
+    }
+    return btoa(binary);
+}
+
+export function setAuthCookie(username: string, password: string): void {
+    const auth = "Basic " + toBase64(username + ":" + password);
+    setCookie(AUTH_COOKIE_NAME, auth, {
+        path: "/",
+        secure: globalThis.location.protocol === "https:",
+        sameSite: "strict",
+        httpOnly: false,
+    });
+    localStorage.setItem(AUTH_COOKIE_NAME, auth);
+}
+
+export async function updateAuthCookie(
+    authProvider: AuthStrategy,
+    newPassword: string
+): Promise<void> {
+    const currentAuth = await authProvider.getAuth();
+    if (!currentAuth) return;
+    const decoded = atob(currentAuth.replace(/^Basic\s+/, ""));
+    const username = decoded.substring(0, decoded.indexOf(":"));
+    setAuthCookie(username, newPassword);
+}
 
 // Strategy interface — defines how to obtain the auth credentials
 export interface AuthStrategy {

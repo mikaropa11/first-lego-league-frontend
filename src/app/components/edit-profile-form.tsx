@@ -5,7 +5,7 @@ import { Button } from "@/app/components/button";
 import ErrorAlert from "@/app/components/error-alert";
 import { Input } from "@/app/components/input";
 import { Label } from "@/app/components/label";
-import { clientAuthProvider } from "@/lib/authProvider";
+import { clientAuthProvider, updateAuthCookie } from "@/lib/authProvider";
 import { parseErrorMessage } from "@/types/errors";
 import { CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -61,6 +61,11 @@ export default function EditProfileForm({ userId, currentEmail }: EditProfileFor
 
         try {
             await service.patchUser(userId, payload);
+
+            if (payload.password) {
+                await updateAuthCookie(clientAuthProvider, payload.password);
+            }
+
             setSuccessMessage("Profile updated successfully.");
             reset({ email: data.email, password: "", confirmPassword: "" });
             router.refresh();

@@ -2,6 +2,8 @@
 
 import { useAuth } from "@/app/components/authentication";
 import EditionSelector from "@/app/components/edition-selector";
+import FavoritesDropdown from "@/app/components/favorites-dropdown";
+import { useFavorites } from "@/app/components/favorites-provider";
 import { LanguageSelector } from "@/app/components/language-selector";
 import Loginbar from "@/app/components/loginbar";
 import { useTranslations } from "@/lib/languageContext";
@@ -34,6 +36,7 @@ export default function Navbar() {
     const searchParams = useSearchParams();
     const currentYear = searchParams.get("year");
     const { user } = useAuth();
+    const { favorites, removeFavoriteById } = useFavorites();
     const t = useTranslations();
 
     const mainNavLinks: NavLink[] = [
@@ -79,6 +82,8 @@ export default function Navbar() {
                                 {label}
                             </Link>
                         ))}
+
+                        <FavoritesDropdown />
 
                         {/* Dropdown Click Modules*/}
                         <div className="relative">
@@ -156,7 +161,42 @@ export default function Navbar() {
 
             {/* Mobile Menu Content */}
             {isMenuOpen && (
-                <div className="lg:hidden border-t border-border bg-card p-4 space-y-2 animate-in slide-in-from-top-2">
+                <div className="lg:hidden border-t border-border bg-card p-4 space-y-4 animate-in slide-in-from-top-2">
+                    {favorites.length > 0 && (
+                        <div className="rounded-lg border border-border bg-background p-3">
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                                <p className="text-sm font-semibold text-foreground">Favorites</p>
+                                <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+                                    {favorites.length}
+                                </span>
+                            </div>
+                            <div className="space-y-2">
+                                {favorites.map((favorite) => (
+                                    <div
+                                        key={`${favorite.type}:${favorite.id}`}
+                                        className="flex items-start justify-between gap-3 rounded-md border border-border bg-card px-3 py-2"
+                                    >
+                                        <Link
+                                            href={favorite.href}
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className="min-w-0 text-sm font-medium text-foreground hover:text-accent hover:underline"
+                                        >
+                                            {favorite.label}
+                                        </Link>
+                                        <button
+                                            type="button"
+                                            className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                            onClick={() => removeFavoriteById(favorite.type, favorite.id)}
+                                            aria-label={`Remove ${favorite.label} from favorites`}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {[...mainNavLinks, ...moduleLinks]
                         .filter(l => !l.roles || user?.authorities?.some(a => l.roles?.includes(a.authority)))
                         .map(link => (
@@ -175,3 +215,4 @@ export default function Navbar() {
         </nav>
     );
 }
+

@@ -7,9 +7,9 @@ import { Button } from "@/app/components/button";
 import ErrorAlert from "@/app/components/error-alert";
 import { Input } from "@/app/components/input";
 import { Label } from "@/app/components/label";
-import { AUTH_COOKIE_NAME, clientAuthProvider } from "@/lib/authProvider";
+import { AUTH_COOKIE_NAME, clientAuthProvider, setAuthCookie } from "@/lib/authProvider";
 import { AuthenticationError, parseErrorMessage } from "@/types/errors";
-import { deleteCookie, setCookie } from "cookies-next";
+import { deleteCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -19,17 +19,6 @@ type FormValues = {
     password: string;
 };
 
-function toBase64(value: string) {
-    const bytes = new TextEncoder().encode(value);
-    let binary = "";
-
-    for (const byte of bytes) {
-        binary += String.fromCodePoint(byte);
-    }
-
-    return btoa(binary);
-}
-
 export default function LoginPage() {
     const router = useRouter();
     const { setUser } = useAuth();
@@ -38,15 +27,7 @@ export default function LoginPage() {
 
     async function login(username: string, password: string) {
         setErrorMessage(null);
-        const base64 = toBase64(`${username}:${password}`);
-        const authorization = `Basic ${base64}`;
-        setCookie(AUTH_COOKIE_NAME, authorization, {
-            path: "/",
-            secure: window.location.protocol === 'https:',
-            sameSite: "strict",
-            httpOnly: false,
-        });
-        localStorage.setItem(AUTH_COOKIE_NAME, authorization);
+        setAuthCookie(username, password);
         const service = new UsersService(clientAuthProvider);
         const user = await service.getCurrentUser();
     

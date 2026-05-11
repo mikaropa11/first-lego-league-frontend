@@ -1,16 +1,22 @@
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
-import { getAwardLabel } from "@/lib/awardUtils";
-import { Award } from "@/types/award";
 import AddAwardForm from "./_add-award-form";
+import AwardsManager, { type AwardSnapshot } from "./_awards-section";
+
+interface EditionOption {
+    readonly uri?: string;
+    readonly year?: number;
+    readonly venueName?: string;
+}
 
 interface TeamAwardsSectionProps {
     teamId: string;
     teamName: string;
-    awards: Award[];
+    awards: AwardSnapshot[];
     awardsError: string | null;
     isAdminUser: boolean;
     teamEditionUri: string | null;
+    editions: EditionOption[];
 }
 
 export default function TeamAwardsSection({
@@ -20,12 +26,15 @@ export default function TeamAwardsSection({
     awardsError,
     isAdminUser,
     teamEditionUri,
+    editions,
 }: Readonly<TeamAwardsSectionProps>) {
     return (
         <section aria-labelledby="team-awards-heading">
-            <h2 id="team-awards-heading" className="mt-8 mb-4 text-xl font-semibold">
-                Awards
-            </h2>
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 id="team-awards-heading" className="text-xl font-semibold">
+                    Awards
+                </h2>
+            </div>
 
             {isAdminUser && teamEditionUri && (
                 <div className="mb-4">
@@ -53,20 +62,15 @@ export default function TeamAwardsSection({
             )}
 
             {!awardsError && awards.length > 0 && (
-                <ul className="space-y-3">
-                    {awards.map((award, index) => (
-                        <li
-                            key={award.uri ?? award.link("self")?.href ?? index}
-                            className="rounded-lg border border-border bg-card p-4 shadow-sm"
-                        >
-                            <p className="font-medium text-foreground">{getAwardLabel(award, index)}</p>
-                            <div className="mt-1 text-sm text-muted-foreground">
-                                {award.title && <p>{award.title}</p>}
-                                {award.category && <p>{award.category}</p>}
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                <AwardsManager
+                    key={awards.map((award) => award.uri ?? award.id ?? award.name ?? award.title ?? award.category ?? "").join("|")}
+                    teamId={teamId}
+                    teamName={teamName}
+                    awards={awards}
+                    editions={editions}
+                    isAdmin={isAdminUser}
+                    teamEditionUri={teamEditionUri}
+                />
             )}
         </section>
     );

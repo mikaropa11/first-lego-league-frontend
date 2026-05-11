@@ -3,6 +3,7 @@ import { EditionsService } from "@/api/editionApi";
 import { LeaderboardService } from "@/api/leaderboardApi";
 import { MediaService } from "@/api/mediaApi";
 import { UsersService } from "@/api/userApi";
+import FavoriteActionButton from "@/app/components/favorite-action-button";
 import { buttonVariants } from "@/app/components/button";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
@@ -12,6 +13,7 @@ import { MediaItem } from "@/app/components/media-gallery";
 import { MediaSection } from "@/app/components/media-section";
 import MediaUploadForm from "@/app/components/media-upload-form";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { getAwardWinnerTeamUri, normalizeUri } from "@/lib/awardUtils";
 import { isAdmin } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
 import { getServerTranslations } from "@/lib/i18n/server";
@@ -27,18 +29,44 @@ import { User } from "@/types/user";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import DeleteEditionButton from "./delete-edition-button";
+import AwardSection from "./_award-section";
 import RoundsManager from "./rounds-manager";
 import { RoundsService } from "@/api/roundsApi";
 import EditionStateControls from "./edition-state-controls";
+import { isEditionFinished } from "@/lib/editionStateGuards";
 
 
 interface EditionDetailPageProps {
     readonly params: Promise<{ id: string }>;
 }
 
+interface EditionOption {
+    readonly uri?: string;
+    readonly year?: number;
+    readonly venueName?: string;
+}
+
 function getTeamHref(team: Team): string | null {
     const teamId = getEncodedResourceId(team.uri);
     return teamId ? `/teams/${teamId}` : null;
+}
+
+function getTeamUri(team: Team): string | null {
+    return team.link("self")?.href ?? team.uri ?? null;
+}
+
+function getAwardResourceUri(award: Award): string | null {
+    return award.uri ?? award.link("self")?.href ?? null;
+}
+
+function getTeamAwards(team: Team, awards: Award[]): Award[] {
+    const teamUri = normalizeUri(getTeamUri(team));
+
+    if (!teamUri) {
+        return [];
+    }
+
+    return awards.filter((award) => normalizeUri(getAwardWinnerTeamUri(award)) === teamUri);
 }
 
 function getEditionTitle(edition: Edition | null, id: string) {
@@ -50,7 +78,7 @@ function getEditionTitle(edition: Edition | null, id: string) {
 }
 
 interface EditionUriData {
-    awards: Award[];
+    awards: Award[]; 
     mediaContents: MediaContent[];
     awardsError: string | null;
     mediaError: string | null;
@@ -114,6 +142,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
     let edition: Edition | null = null;
     let teams: Team[] = [];
     let awards: Award[] = [];
+    let editions: EditionOption[] = [];
     let mediaContents: MediaContent[] = [];
     let leaderboardItems: LeaderboardItem[] = [];
     let rounds: Round[] = [];
@@ -155,6 +184,18 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
             ));
         }
 
+        if (currentUser && isAdmin(currentUser)) {
+            try {
+                editions = (await editionsService.getEditions()).map((item) => ({
+                    uri: item.uri,
+                    year: item.year,
+                    venueName: item.venueName,
+                }));
+            } catch (e) {
+                console.error("Failed to fetch editions:", e);
+            }
+        }
+
         try {
             const data = await new LeaderboardService(serverAuthProvider).getEditionLeaderboard(id, 0, 100);
             leaderboardItems = data.items;
@@ -170,6 +211,8 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
             roundsError = parseErrorMessage(e);
         }
     }
+
+    const favoriteEditionLabel = getEditionTitle(edition, id);
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
@@ -209,7 +252,17 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                             )}
                         </div>
 
-                        {currentUser && isAdmin(currentUser) && (
+                        <div className="mb-3">
+                            <FavoriteActionButton
+                                type="edition"
+                                id={String(id)}
+                                label={favoriteEditionLabel}
+                                href={`/editions/${id}`}
+                                secondaryLabel={edition?.venueName ?? undefined}
+                            />
+                        </div>
+
+                        {currentUser && isAdmin(currentUser) && !isEditionFinished(edition?.state) && (
                             <div className="flex gap-2">
                                 <Link
                                     href={`/editions/${id}/edit`}
@@ -248,20 +301,52 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                                 <ul className="w-full space-y-3">
                                     {teams.map((team, index) => {
                                         const href = getTeamHref(team);
+                                        const teamAwards = getTeamAwards(team, awards);
                                         return (
                                             <li
                                                 key={team.uri ?? index}
                                                 className="w-full rounded-lg border border-border bg-card p-4 shadow-sm transition hover:bg-secondary/30"
                                             >
-                                                {href ? (
-                                                    <Link href={href} className="font-medium text-foreground">
-                                                        {getTeamDisplayName(team)}
-                                                    </Link>
-                                                ) : (
-                                                    <span className="font-medium text-foreground">
-                                                        {getTeamDisplayName(team)}
-                                                    </span>
-                                                )}
+                                                <div className="flex flex-col gap-3">
+                                                    {href ? (
+                                                        <Link href={href} className="font-medium text-foreground">
+                                                            {getTeamDisplayName(team)}
+                                                        </Link>
+                                                    ) : (
+                                                        <span className="font-medium text-foreground">
+                                                            {getTeamDisplayName(team)}
+                                                        </span>
+                                                    )}
+
+                                                    {teamAwards.length > 0 && (
+                                                        <div className="space-y-3 rounded-md border border-border bg-background/70 p-3">
+                                                            <div className="flex items-center justify-between gap-3">
+                                                                <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                                                    Awards
+                                                                </h3>
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {teamAwards.length}
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="space-y-3">
+                                                                {teamAwards.map((award, awardIndex) => {
+                                                                    const resourceUri = getAwardResourceUri(award);
+
+                                                                    return (
+                                                                        <AwardSection
+                                                                            key={resourceUri || `${team.uri ?? index}-${award.name ?? award.title ?? award.category ?? "award"}-${awardIndex}`}
+                                                                            award={{ ...award, ...(resourceUri ? { resourceUri } : {}) }}
+                                                                            editionId={id}
+                                                                            editions={editions}
+                                                                            isAdmin={Boolean(currentUser && isAdmin(currentUser))}
+                                                                        />
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </li>
                                         );
                                     })}
@@ -322,7 +407,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                             {!roundsError && (
                                 <RoundsManager
                                     initialRounds={rounds.map((r) => ({ uri: r.uri, number: r.number }))}
-                                    isAdmin={!!(currentUser && isAdmin(currentUser))}
+                                    isAdmin={!!(currentUser && isAdmin(currentUser) && !isEditionFinished(edition?.state))}
                                 />
                             )}
 
@@ -331,7 +416,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                                     {t.editions.mediaGallery}
                                 </h2>
 
-                                {currentUser && isAdmin(currentUser) && edition && (
+                                {currentUser && isAdmin(currentUser) && edition && !isEditionFinished(edition?.state) && (
                                     <MediaUploadForm editionId={id} />
                                 )}
 
