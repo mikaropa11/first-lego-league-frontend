@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/app/components/authentication";
+import { buttonVariants } from "@/app/components/button";
 import EditionSelector from "@/app/components/edition-selector";
 import FavoritesDropdown from "@/app/components/favorites-dropdown";
 import { useFavorites } from "@/app/components/favorites-provider";
@@ -8,7 +9,7 @@ import Loginbar from "@/app/components/loginbar";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, Moon, Sun } from "lucide-react";
 
 interface NavLink {
     href: string;
@@ -138,10 +139,10 @@ export default function Navbar() {
                             type="button"
                             onClick={toggleTheme}
                             aria-label="Toggle dark mode"
-                            className="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground cursor-pointer transition-colors"
+                            className={buttonVariants({ variant: "secondary", size: "icon-sm" })}
                         >
-                            <span className="dark:hidden">🌙</span>
-                            <span className="hidden dark:inline">☀️</span>
+                            <Moon aria-hidden="true" className="h-5 w-5 dark:hidden" />
+                            <Sun aria-hidden="true" className="h-5 w-5 hidden dark:block" />
                         </button>
 
                         {/* Mobile Menu Button */}
