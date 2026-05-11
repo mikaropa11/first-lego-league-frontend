@@ -24,6 +24,7 @@ import { User } from "@/types/user";
 import { Pencil } from "lucide-react";
 import Link from "next/link";
 import MatchDeleteSection from "./match-delete-section";
+import MatchStateControls from "./match-state-controls";
 import RecordResultForm from "./record-result-form";
 import { isEditionActive } from "@/lib/editionStateGuards";
 
@@ -94,6 +95,18 @@ function getRoundLabel(round: Round | null, fallbackRound?: string) {
     }
 
     return "Round unavailable";
+}
+
+async function getOptionalRelation<T>(promise: Promise<T>) {
+    try {
+        return await promise;
+    } catch (error) {
+        if (error instanceof NotFoundError) {
+            return null;
+        }
+
+        throw error;
+    }
 }
 
 function TeamCard({ team, label, yearQuery }: Readonly<{ team: Team; label: string; yearQuery: string }>) {
@@ -182,26 +195,10 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
 
         const teamsService = new TeamsService(serverAuthProvider);
         const editionsService = new EditionsService(serverAuthProvider);
-        const roundDetailsPromise = service.getMatchRound(id).then((resolvedRound) => {
-            const editionUri =
-                resolvedRound.link("edition")?.href ??
-                (resolvedRound.uri ? `${resolvedRound.uri}/edition` : null);
-
-            if (!editionUri) {
-                return { round: resolvedRound, edition: null as Edition | null };
-            }
-
-            return editionsService.getEditionByUri(editionUri).then((resolvedEdition) => ({
-                round: resolvedRound,
-                edition: resolvedEdition,
-            })).catch((e) => {
-                console.error("Failed to fetch match edition:", e);
-                return { round: resolvedRound, edition: null as Edition | null };
-            });
-        }).catch((e) => {
-            console.error("Failed to fetch match round:", e);
-            return { round: null, edition: null as Edition | null };
-        });
+        const roundPromise = getOptionalRelation(service.getMatchRound(id));
+        const teamAPromise = getOptionalRelation(service.getMatchTeamA(id));
+        const teamBPromise = getOptionalRelation(service.getMatchTeamB(id));
+        const matchResultsPromise = getOptionalRelation(service.getMatchResults(matchUri));
 
         const [, roundDetails] = await Promise.all([
             teamsService.getTeams().then((t) => {
@@ -210,24 +207,63 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                 console.error("Failed to fetch match teams:", e);
                 teamsError = `Could not load team information. ${parseErrorMessage(e)}`;
             }),
-            roundDetailsPromise,
-            service.getMatchTeamA(id).then((t) => {
+            roundPromise.then(async (resolvedRound) => {
+                if (!resolvedRound) {
+                    return { round: null, edition: null as Edition | null };
+                }
+
+                const editionUri =
+                    resolvedRound.link("edition")?.href ??
+                    (resolvedRound.uri ? `${resolvedRound.uri}/edition` : null);
+
+                if (!editionUri) {
+                    return { round: resolvedRound, edition: null as Edition | null };
+                }
+
+                try {
+                    const resolvedEdition = await editionsService.getEditionByUri(editionUri);
+                    return { round: resolvedRound, edition: resolvedEdition };
+                } catch (e) {
+                    if (e instanceof NotFoundError) {
+                        return { round: resolvedRound, edition: null as Edition | null };
+                    }
+
+                    console.error("Failed to fetch match edition:", e);
+                    return { round: resolvedRound, edition: null as Edition | null };
+                }
+            }),
+            teamAPromise.then((t) => {
+                if (!t) {
+                    return null;
+                }
+
                 formTeamA = t;
                 const raw = t as unknown as { name?: string; id?: string; uri?: string };
                 teamADisplayName = raw.name ?? raw.id ?? "Team A";
                 const href = t.link("self")?.href ?? raw.uri ?? "";
                 teamAId = decodeURIComponent(href.split("/").pop() ?? "");
-            }).catch(() => null),
-            service.getMatchTeamB(id).then((t) => {
+                return null;
+            }),
+            teamBPromise.then((t) => {
+                if (!t) {
+                    return null;
+                }
+
                 formTeamB = t;
                 const raw = t as unknown as { name?: string; id?: string; uri?: string };
                 teamBDisplayName = raw.name ?? raw.id ?? "Team B";
                 const href = t.link("self")?.href ?? raw.uri ?? "";
                 teamBId = decodeURIComponent(href.split("/").pop() ?? "");
-            }).catch(() => null),
-            service.getMatchResults(matchUri).then((r) => {
+                return null;
+            }),
+            matchResultsPromise.then((r) => {
+                if (!r) {
+                    return null;
+                }
+
                 matchResults = r;
-            }).catch(() => null),
+                return null;
+            }),
         ]);
 
         round = roundDetails.round;
@@ -262,7 +298,7 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
     const displayTeamB = teamB ?? formTeamB;
     const displayEdition = getEditionLabel(edition);
     const displayRound = getRoundLabel(round, roundFallback);
-    const displayState = matchResults.length > 0 ? "COMPLETED" : match?.state;
+    const displayState = match?.state;
 
     return (
         <PageShell
@@ -322,8 +358,15 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                                 {match.competitionTable && (
                                     <InfoRow label="Competition table" value={match.competitionTable} />
                                 )}
-                                {displayState && <InfoRow label="State" value={displayState} />}
                                 {match.referee && <InfoRow label="Referee" value={match.referee} />}
+
+                                <div className="pt-2">
+                                    <MatchStateControls
+                                        matchId={id}
+                                        state={displayState}
+                                        canManageState={isAuthorized}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </section>
