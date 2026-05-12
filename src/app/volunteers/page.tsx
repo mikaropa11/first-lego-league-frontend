@@ -4,9 +4,11 @@ import { buttonVariants } from "@/app/components/button";
 import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { cn } from "@/lib/utils";
 import { parseErrorMessage } from "@/types/errors";
 import { Volunteer } from "@/types/volunteer";
 import { isAdmin } from "@/lib/authz";
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import VolunteersClient, { VolunteerItem } from "./volunteers-client";
 
@@ -50,16 +52,25 @@ export default async function VolunteersPage() {
             eyebrow="Volunteers directory"
             title="Volunteers"
             description="Manage the competition volunteers including judges, referees, and floaters."
+            bannerClassName="volunteers-page-banner"
+            panelClassName="volunteers-page-panel"
+            heroAside={
+                <div className="volunteers-page-hero-aside">
+                    {userIsAdmin && (
+                        <Link
+                            href="/volunteers/new"
+                            className={cn(buttonVariants(), "volunteers-page-create-button")}
+                        >
+                            <span className="volunteers-page-create-button__label">
+                                New volunteer
+                            </span>
+                            <ArrowUpRight aria-hidden="true" />
+                        </Link>
+                    )}
+                </div>
+            }
         >
             <div className="space-y-8">
-                {userIsAdmin && (
-                    <div className="flex justify-end">
-                        <Link href="/volunteers/new" className={buttonVariants()}>
-                            New Volunteer
-                        </Link>
-                    </div>
-                )}
-
                 {error && <ErrorAlert message={error} />}
 
                 {!error && (

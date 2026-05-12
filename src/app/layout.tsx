@@ -5,6 +5,7 @@ import Navbar from "@/app/components/navbar";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
+import "../css/volunteers-list.css";
 
 export const metadata: Metadata = {
     title: "First LEGO League",
