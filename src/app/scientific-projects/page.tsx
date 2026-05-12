@@ -91,7 +91,7 @@ function getScientificProjectTeamLabel(project: ScientificProject) {
 
 function getProjectHeadline(project: ScientificProject, index: number) {
   const rawName = project.name?.trim();
-  const rawComments = project.comments?.trim();
+  const rawComments = project.comments?.trim() ?? "";
 
   if (!rawName && !rawComments) {
     return {
