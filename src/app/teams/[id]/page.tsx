@@ -13,6 +13,7 @@ import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { getEditionOptions } from "@/lib/editionOptions";
 import { Award } from "@/types/award";
+import { Edition } from "@/types/edition";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import { Match } from "@/types/match";
 import { ScientificProject } from "@/types/scientificProject";
