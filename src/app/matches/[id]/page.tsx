@@ -12,7 +12,7 @@ import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin, isReferee } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
-import { formatMatchTime } from "@/lib/matchUtils";
+import { formatMatchDuration, formatMatchTime } from "@/lib/matchUtils";
 import { getTeamDisplayName } from "@/lib/teamUtils";
 import { Edition } from "@/types/edition";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
@@ -353,6 +353,10 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                             <div className="space-y-3">
                                 <InfoRow label="Start time" value={formatMatchTime(match.startTime)} />
                                 <InfoRow label="End time" value={formatMatchTime(match.endTime)} />
+                                <InfoRow
+                                    label="Duration"
+                                    value={formatMatchDuration(match.startTime, match.endTime)}
+                                />
                                 <InfoRow label="Edition" value={displayEdition} />
                                 <InfoRow label="Round" value={displayRound} />
                                 {match.competitionTable && (
