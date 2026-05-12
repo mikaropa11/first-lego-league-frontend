@@ -59,7 +59,9 @@ export default async function EditScientificProjectPage(props: Readonly<EditScie
 
     const teamHref = project?.link('team')?.href ?? project?.team ?? '';
     const editionHref = project?.link('edition')?.href ?? project?.edition ?? '';
-    const [name = '', ...rest] = (project?.comments ?? '').split('\n\n');
+    const projectName = project?.name ?? '';
+    const [legacyName = '', ...rest] = (project?.comments ?? '').split('\n\n');
+    const derivedName = projectName || legacyName;
     const description = rest.join('\n\n');
 
     return (
@@ -72,7 +74,13 @@ export default async function EditScientificProjectPage(props: Readonly<EditScie
             {project && !error && editionData && (
                 <EditScientificProjectForm
                     projectId={id}
-                    defaultValues={{ name, description, edition: editionHref, team: teamHref }}
+                    defaultValues={{
+                        name: derivedName,
+                        description,
+                        score: project?.score ?? 0,
+                        edition: editionHref,
+                        team: teamHref,
+                    }}
                     editionOptions={editionData.editionOptions}
                     teamsPerEdition={editionData.teamsPerEdition}
                 />

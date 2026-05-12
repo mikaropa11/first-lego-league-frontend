@@ -2,6 +2,7 @@ import { AwardsService } from "@/api/awardApi";
 import { EditionsService } from "@/api/editionApi";
 import { LeaderboardService } from "@/api/leaderboardApi";
 import { MediaService } from "@/api/mediaApi";
+import { ScientificProjectsService } from "@/api/scientificProjectApi";
 import { UsersService } from "@/api/userApi";
 import FavoriteActionButton from "@/app/components/favorite-action-button";
 import { buttonVariants } from "@/app/components/button";
@@ -12,6 +13,7 @@ import LeaderboardTable from "@/app/components/leaderboard-table";
 import { MediaItem } from "@/app/components/media-gallery";
 import { MediaSection } from "@/app/components/media-section";
 import MediaUploadForm from "@/app/components/media-upload-form";
+import { ScientificProjectCardLink } from "@/app/components/scientific-project-card";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { getAwardWinnerTeamUri, normalizeUri } from "@/lib/awardUtils";
 import { isAdmin } from "@/lib/authz";
@@ -23,6 +25,7 @@ import { Edition } from "@/types/edition";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import type { LeaderboardItem } from "@/types/leaderboard";
 import { MediaContent } from "@/types/mediaContent";
+import { ScientificProject } from "@/types/scientificProject";
 import { Team } from "@/types/team";
 import { User } from "@/types/user";
 import Link from "next/link";
@@ -149,6 +152,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
     const editionsService = new EditionsService(serverAuthProvider);
     const awardsService = new AwardsService(serverAuthProvider);
     const mediaService = new MediaService(serverAuthProvider);
+    const scientificProjectsService = new ScientificProjectsService(serverAuthProvider);
 
     let currentUser: User | null = null;
     let edition: Edition | null = null;
@@ -156,12 +160,14 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
     let awards: Award[] = [];
     let editions: EditionOption[] = [];
     let mediaContents: MediaContent[] = [];
+    let scientificProjects: ScientificProject[] = [];
     let leaderboardItems: LeaderboardItem[] = [];
     let rounds: Round[] = [];
     let error: string | null = null;
     let teamsError: string | null = null;
     let awardsError: string | null = null;
     let mediaError: string | null = null;
+    let scientificProjectsError: string | null = null;
     let classificationError: string | null = null;
     let roundsError: string | null = null;
 
@@ -194,6 +200,13 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                 awardsService,
                 mediaService,
             ));
+        }
+
+        try {
+            scientificProjects = await scientificProjectsService.getScientificProjectsByEdition(id);
+        } catch (e) {
+            console.error("Failed to fetch scientific projects:", e);
+            scientificProjectsError = parseErrorMessage(e);
         }
 
         if (currentUser && isAdmin(currentUser)) {
@@ -379,6 +392,35 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                                     />
                                 </div>
                             )}
+
+                            <section aria-labelledby="scientific-projects-heading" className="mt-8 space-y-4">
+                                <div className="space-y-1">
+                                    <div className="page-eyebrow">Innovation</div>
+                                    <h2 id="scientific-projects-heading" className="text-xl font-semibold text-foreground">
+                                        Scientific Projects
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        Projects presented by the teams in this edition.
+                                    </p>
+                                </div>
+
+                                {scientificProjectsError ? (
+                                    <ErrorAlert message={`Could not load scientific projects. ${scientificProjectsError}`} />
+                                ) : scientificProjects.length === 0 ? (
+                                    <EmptyState
+                                        title="No scientific projects yet"
+                                        description="There are no scientific projects registered for this edition yet."
+                                    />
+                                ) : (
+                                    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                        {scientificProjects.map((project, index) => (
+                                            <li key={project.uri ?? project.link("self")?.href ?? index} className="h-full">
+                                                <ScientificProjectCardLink project={project} index={index} />
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </section>
 
                             <h2 className="mt-8 mb-4 text-xl font-semibold text-foreground">
                                 Final Classification

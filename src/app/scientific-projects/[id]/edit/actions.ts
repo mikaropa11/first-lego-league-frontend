@@ -19,7 +19,7 @@ async function assertAdminAccess() {
 
 export async function editScientificProject(
     id: string,
-    data: { comments: string; team: string; edition: string }
+    data: { name: string; score: number; comments: string; team: string; edition: string }
 ) {
     try {
         await assertAdminAccess();

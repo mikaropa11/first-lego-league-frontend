@@ -5,8 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/app/components/button';
 import { Input } from '@/app/components/input';
 import { Label } from '@/app/components/label';
+import type { SelectOption } from '@/lib/editionOptions';
 import { updateTeam } from '@/app/teams/new/actions';
 import { TEAM_CATEGORY_OPTIONS } from '@/types/team';
+
+const selectClassName =
+    "border-input h-11 w-full border bg-card px-4 py-2 text-sm outline-none " +
+    "focus-visible:border-ring focus-visible:ring-ring/35 focus-visible:ring-[3px] " +
+    "aria-invalid:border-destructive";
 
 interface TeamEditSectionProps {
     readonly team: {
@@ -17,11 +23,17 @@ interface TeamEditSectionProps {
         readonly category?: string;
         readonly foundationYear?: number;
         readonly inscriptionDate?: string;
+        readonly edition?: string | null;
     };
+    readonly editionOptions?: SelectOption[];
     readonly isAdmin?: boolean;
 }
 
-export default function TeamEditSection({ team, isAdmin = true }: TeamEditSectionProps) {
+export default function TeamEditSection({
+    team,
+    editionOptions = [],
+    isAdmin = true,
+}: TeamEditSectionProps) {
     const router = useRouter();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -34,6 +46,7 @@ export default function TeamEditSection({ team, isAdmin = true }: TeamEditSectio
     const [category, setCategory] = useState(team.category ?? '');
     const [foundationYear, setFoundationYear] = useState(team.foundationYear ?? '');
     const [inscriptionDate, setInscriptionDate] = useState(team.inscriptionDate ?? '');
+    const [edition, setEdition] = useState(team.edition ?? '');
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -51,6 +64,7 @@ export default function TeamEditSection({ team, isAdmin = true }: TeamEditSectio
                 category,
                 foundationYear: foundationYear ? Number(foundationYear) : null,
                 inscriptionDate: inscriptionDate || null,
+                edition: edition.trim() || null,
             };
 
             const result = await updateTeam(payload);
@@ -77,6 +91,7 @@ export default function TeamEditSection({ team, isAdmin = true }: TeamEditSectio
         setCategory(team.category ?? '');
         setFoundationYear(team.foundationYear ?? '');
         setInscriptionDate(team.inscriptionDate ?? '');
+        setEdition(team.edition ?? '');
         setIsEditing(true);
     }
 
@@ -154,6 +169,22 @@ export default function TeamEditSection({ team, isAdmin = true }: TeamEditSectio
                                     value={inscriptionDate}
                                     onChange={(e) => setInscriptionDate(e.target.value)}
                                 />
+                            </div>
+
+                            <div className="grid gap-2 md:col-span-2">
+                                <Label>Edition</Label>
+                                <select
+                                    value={edition}
+                                    onChange={(e) => setEdition(e.target.value)}
+                                    className={selectClassName}
+                                >
+                                    <option value="">No edition selected</option>
+                                    {editionOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 

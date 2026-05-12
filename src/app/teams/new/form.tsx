@@ -3,6 +3,7 @@
 import { Button } from "@/app/components/button";
 import { Input } from "@/app/components/input";
 import { Label } from "@/app/components/label";
+import type { SelectOption } from "@/lib/editionOptions";
 import { isValidEmailAddress } from "@/lib/validation";
 import { parseErrorMessage } from "@/types/errors";
 import {
@@ -77,7 +78,11 @@ function SectionCard({
     );
 }
 
-export default function NewTeamForm() {
+export default function NewTeamForm({
+    editionOptions,
+}: Readonly<{
+    editionOptions: SelectOption[];
+}>) {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [isRedirecting, setIsRedirecting] = useState(false);
     const router = useRouter();
@@ -94,6 +99,7 @@ export default function NewTeamForm() {
             inscriptionDate: "",
             foundationYear: "",
             category: TEAM_CATEGORY_OPTIONS[0],
+            edition: "",
             members: [createEmptyMember()],
             coaches: [createEmptyCoach()],
         },
@@ -183,6 +189,23 @@ export default function NewTeamForm() {
                             ))}
                         </select>
                         <FieldError message={errors.category?.message} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="edition">Edition</Label>
+                        <select
+                            id="edition"
+                            className={selectClassName}
+                            aria-invalid={!!errors.edition}
+                            {...register("edition")}
+                        >
+                            <option value="">No edition selected</option>
+                            {editionOptions.map((option: SelectOption) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="grid gap-2">

@@ -88,6 +88,7 @@ export class TeamsService {
                 educationalCenter: data.educationalCenter.trim(),
                 category: data.category,
                 inscriptionDate: data.inscriptionDate,
+                edition: data.edition?.trim() || undefined,
             },
             this.authStrategy,
             "team"
@@ -253,6 +254,7 @@ export class TeamsService {
             name: data.name?.trim(),
             city: data.city?.trim() || undefined,
             educationalCenter: data.educationalCenter?.trim() || undefined,
+            edition: data.edition?.trim() || undefined,
         };
 
         let response: Response;

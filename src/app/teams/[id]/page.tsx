@@ -11,6 +11,7 @@ import ErrorAlert from "@/app/components/error-alert";
 import TeamEditSection from "@/app/components/team-edit-section";
 import { TeamMembersManager } from "@/app/components/team-member-manager";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { getEditionOptions } from "@/lib/editionOptions";
 import { Award } from "@/types/award";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import { Match } from "@/types/match";
@@ -26,12 +27,6 @@ import TournamentItinerary, { ScheduleItem } from "./tournament-itinerary";
 
 interface TeamDetailPageProps {
     readonly params: Promise<{ id: string }>;
-}
-
-interface EditionOption {
-    readonly uri?: string;
-    readonly year?: number;
-    readonly venueName?: string;
 }
 
 interface AwardSnapshot {
@@ -145,7 +140,7 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
     let members: TeamMember[] = [];
     let scientificProjects: ScientificProject[] = [];
     let awards: Award[] = [];
-    let editions: EditionOption[] = [];
+    let editions: Edition[] = [];
     let editionYearStr: string | undefined;
     let teamEditionUri: string | null = null;
     let teamMatchesData: Array<{ match: Match; table: string; opponent?: string; round?: string }> = [];
@@ -187,11 +182,7 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
 
         if (isAdminUser) {
             try {
-                editions = (await editionsService.getEditions()).map((item) => ({
-                    uri: item.uri,
-                    year: item.year,
-                    venueName: item.venueName,
-                }));
+                editions = await editionsService.getEditions();
             } catch (e) {
                 console.error("Error loading editions:", e);
             }
@@ -362,7 +353,9 @@ export default async function TeamDetailPage(props: Readonly<TeamDetailPageProps
                                     category: team.category ?? undefined,
                                     foundationYear: team.foundationYear ?? undefined,
                                     inscriptionDate: team.inscriptionDate ?? undefined,
+                                    edition: teamEditionUri ?? team.link("edition")?.href ?? Reflect.get(team, "edition") ?? undefined,
                                 }}
+                                editionOptions={getEditionOptions(editions)}
                             />
                         </div>
                     )}
