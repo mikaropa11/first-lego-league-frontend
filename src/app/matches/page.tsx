@@ -211,9 +211,9 @@ function getParticipantLabel(value: string | null | undefined, fallback: string)
     return fallback;
 }
 
-function getMatchParticipants(match: Match, labels: Record<string, string>) {
+function getMatchParticipants(match: Match, labels: Record<string, string>, t: Translations) {
     const { teamA: fallbackTeamA, teamB: fallbackTeamB } = splitMatchLabel(
-        getTeamsLabel(match, labels),
+        getTeamsLabel(match, labels, t),
     );
 
     return {
@@ -280,15 +280,6 @@ function MatchesTeamFilter({
     query,
     year,
     view,
-}: Readonly<{
-    query: string;
-    year?: string;
-    view?: string;
-}>) {
-function MatchesTeamFilter({
-    query,
-    year,
-    view,
     t,
 }: Readonly<{ query: string; year?: string; view?: string; t: Translations }>) {
     const resetParams = new URLSearchParams();
@@ -323,22 +314,21 @@ function MatchesTeamFilter({
                         "matches-page-search-button",
                     )}
                 >
-                    Search
-            <div className="flex gap-2">
-                <button type="submit" className={buttonVariants({ variant: "secondary", size: "default" })}>
                     {t.matches.search}
                 </button>
-                {query ? (
-                    <Link
-                        href={resetHref}
-                        className={cn(
-                            buttonVariants({ variant: "ghost", size: "default" }),
-                            "matches-page-reset-button",
-                        )}
-                    >
-                        {t.matches.reset}
-                    </Link>
-                ) : null}
+                <div className="flex gap-2">
+                    {query ? (
+                        <Link
+                            href={resetHref}
+                            className={cn(
+                                buttonVariants({ variant: "ghost", size: "default" }),
+                                "matches-page-reset-button",
+                            )}
+                        >
+                            {t.matches.reset}
+                        </Link>
+                    ) : null}
+                </div>
             </div>
         </form>
     );
@@ -355,12 +345,6 @@ function StatCard({
     value: string;
     description: string;
 }>) {
-function MatchesTable({
-    matches,
-    labels,
-    yearQuery,
-    t,
-}: Readonly<{ matches: Match[]; labels: Record<string, string>; yearQuery: string; t: Translations }>) {
     return (
         <div className="matches-page-stat-card">
             <div className="matches-page-stat-card__inner">
@@ -374,6 +358,18 @@ function MatchesTable({
                     </div>
                 </div>
                 <p className="matches-page-stat-card__description">{description}</p>
+            </div>
+        </div>
+    );
+}
+
+function MatchesTable({
+    matches,
+    labels,
+    yearQuery,
+    t,
+}: Readonly<{ matches: Match[]; labels: Record<string, string>; yearQuery: string; t: Translations }>) {
+    return (
         <div className="overflow-hidden border border-border">
             <div className="overflow-x-auto">
                 <table className="w-full min-w-2xl border-collapse text-left">
@@ -436,16 +432,18 @@ function MatchCard({
     index,
     labels,
     yearQuery,
+    t,
 }: Readonly<{
     match: Match;
     index: number;
     labels: Record<string, string>;
     yearQuery: string;
+    t: Translations;
 }>) {
     const tone = getMatchTone(match.state);
     const stateLabel = getMatchStateLabel(match.state);
-    const teamsLabel = getTeamsLabel(match, labels);
-    const { teamA, teamB } = getMatchParticipants(match, labels);
+    const teamsLabel = getTeamsLabel(match, labels, t);
+    const { teamA, teamB } = getMatchParticipants(match, labels, t);
     const matchHref = getMatchHref(match, yearQuery);
     const cardContent = (
         <article className="matches-page-match-card" data-state={tone}>
@@ -724,147 +722,155 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
 
     return (
         <PageShell
-            eyebrow="Competition schedule"
-            title="Matches"
-            description="Browse the scheduled matches with timing details and participating teams."
-            bannerClassName="matches-page-banner"
-            panelClassName="matches-page-panel"
-            heroAside={hasHeroActions ? (
-                <div className="matches-page-action-stack">
-                    {editionId ? (
-                        <Link
-                            href={`/editions/${editionId}/competition-tables`}
-                            className={cn(
-                                buttonVariants({ variant: "outline", size: "sm" }),
-                                "matches-page-secondary-button",
-                            )}
-                        >
-                            <span className="matches-page-secondary-button__label">
-                                Competition tables
-                            </span>
-                            <ArrowUpRight aria-hidden="true" />
-                        </Link>
-                    ) : null}
-                    {isAdmin(currentUser) ? (
-                        <Link
-                            href={`/matches/new${yearQuery}`}
-                            className={cn(
-                                buttonVariants({ variant: "default", size: "sm" }),
-                                "matches-page-create-button",
-                            )}
-                        >
-                            <span className="matches-page-create-button__label">
-                                New match
-                            </span>
-                            <ArrowUpRight aria-hidden="true" />
-                        </Link>
-                    ) : null}
-                </div>
             eyebrow={t.matches.competitionSchedule}
             title={t.matches.title}
             description={t.matches.description}
-            heroAside={isAdmin(currentUser) ? (
-                <Link
-                    href={`/matches/new${yearQuery}`}
-                    className={buttonVariants({ variant: "default", size: "sm" })}
-                >
-                    + {t.common.create}
-                </Link>
-            ) : undefined}
+            bannerClassName="matches-page-banner"
+            panelClassName="matches-page-panel"
+            heroAside={
+                hasHeroActions ? (
+                    <div className="matches-page-action-stack">
+                        {editionId ? (
+                            <Link
+                                href={`/editions/${editionId}/competition-tables`}
+                                className={cn(
+                                    buttonVariants({
+                                        variant: "outline",
+                                        size: "sm",
+                                    }),
+                                    "matches-page-secondary-button",
+                                )}
+                            >
+                                <span className="matches-page-secondary-button__label">
+                                    {t.nav.competitionTables}
+                                </span>
+
+                                <ArrowUpRight aria-hidden="true" />
+                            </Link>
+                        ) : null}
+
+                        {isAdmin(currentUser) ? (
+                            <Link
+                                href={`/matches/new${yearQuery}`}
+                                className={cn(
+                                    buttonVariants({
+                                        variant: "default",
+                                        size: "sm",
+                                    }),
+                                    "matches-page-create-button",
+                                )}
+                            >
+                                <span className="matches-page-create-button__label">
+                                    + {t.common.create}
+                                </span>
+
+                                <ArrowUpRight aria-hidden="true" />
+                            </Link>
+                        ) : null}
+                    </div>
+                ) : undefined
+            }
         >
             <div className="matches-page-content">
                 <section className="matches-page-search-shell">
-                    <div className="matches-page-search-copy">
-                        <div className="page-eyebrow">Live Listing</div>
-                        <h2 className="section-title">Match schedule</h2>
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="space-y-3">
+                            <div className="page-eyebrow">
+                                {t.matches.liveListing}
+                            </div>
 
-                        {year || teamQuery || isCalendarView ? (
-                            <div className="matches-page-filter-chips">
-                                {year ? (
+                            <h2 className="section-title">
+                                {t.matches.matchSchedule}
+                            </h2>
+
+                            {year || teamQuery || isCalendarView ? (
+                                <div className="matches-page-filter-chips">
+                                    {year ? (
+                                        <span className="matches-page-filter-chip">
+                                            Edition {year}
+                                        </span>
+                                    ) : null}
+
+                                    {teamQuery ? (
+                                        <span className="matches-page-filter-chip">
+                                            Team: {teamQuery}
+                                        </span>
+                                    ) : null}
+
                                     <span className="matches-page-filter-chip">
-                                        Edition {year}
+                                        {isCalendarView
+                                            ? "Calendar view"
+                                            : "List view"}
                                     </span>
-                                ) : null}
-                                {teamQuery ? (
-                                    <span className="matches-page-filter-chip">
-                                        Team: {teamQuery}
-                                    </span>
-                                ) : null}
-                                <span className="matches-page-filter-chip">
-                                    {isCalendarView ? "Calendar view" : "List view"}
-                                </span>
-                            </div>
-                        ) : null}
-            <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                    <div className="space-y-3">
-                        <div className="page-eyebrow">{t.matches.liveListing}</div>
-                        <h2 className="section-title">{t.matches.matchSchedule}</h2>
-                    </div>
-
-                    <div className="matches-page-controls">
-                        {!error ? (
-                            <div className="matches-page-search">
-                                <MatchesTeamFilter query={teamQuery} year={year} view={view} />
-                            </div>
-                        ) : null}
-
-                        <div className="matches-page-utility-panel">
-                            <div className="matches-page-view-toggle" aria-label="View options">
-                                <Link
-                                    href={buildViewUrl("list")}
-                                    className="matches-page-view-link"
-                                    data-active={!isCalendarView}
-                                    aria-current={!isCalendarView ? "page" : undefined}
-                                >
-                                    List
-                                </Link>
-                                <Link
-                                    href={buildViewUrl("calendar")}
-                                    className="matches-page-view-link"
-                                    data-active={isCalendarView}
-                                    aria-current={isCalendarView ? "page" : undefined}
-                                >
-                                    Calendar
-                                </Link>
-                            </div>
-
-                            <p className="matches-page-controls-note">
-                                {isCalendarView
-                                    ? "Calendar view groups matches by competition table."
-                                    : hasTeamFilter
-                                      ? "Team filtering searches the full match directory and narrows the current slate."
-                                      : `Showing page ${urlPage} of the published schedule.`}
-                            </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex bg-secondary p-1 rounded-md border border-border">
-                            <Link
-                                href={buildViewUrl("list")}
-                                className={cn(
-                                    "px-3 py-1.5 text-sm font-medium rounded-sm transition-colors",
-                                    isCalendarView ? "text-muted-foreground hover:text-foreground" : "bg-background text-foreground shadow-sm"
-                                )}
-                            >
-                                {t.matches.viewList}
-                            </Link>
-                            <Link
-                                href={buildViewUrl("calendar")}
-                                className={cn(
-                                    "px-3 py-1.5 text-sm font-medium rounded-sm transition-colors",
-                                    isCalendarView ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                {t.matches.viewCalendar}
-                            </Link>
+                                </div>
+                            ) : null}
                         </div>
-                        {editionId && (
-                            <Link
-                                href={`/editions/${editionId}/competition-tables`}
-                                className={buttonVariants({ variant: "outline", size: "sm" })}
-                            >
-                                {t.nav.competitionTables}
-                            </Link>
-                        )}
+
+                        <div className="matches-page-controls">
+                            {!error ? (
+                                <div className="matches-page-search">
+                                    <MatchesTeamFilter
+                                        query={teamQuery}
+                                        year={year}
+                                        view={view}
+                                        t={t}
+                                    />
+                                </div>
+                            ) : null}
+
+                            <div className="matches-page-utility-panel">
+                                <div
+                                    className="matches-page-view-toggle"
+                                    aria-label="View options"
+                                >
+                                    <Link
+                                        href={buildViewUrl("list")}
+                                        className="matches-page-view-link"
+                                        data-active={!isCalendarView}
+                                        aria-current={
+                                            !isCalendarView
+                                                ? "page"
+                                                : undefined
+                                        }
+                                    >
+                                        {t.matches.viewList}
+                                    </Link>
+
+                                    <Link
+                                        href={buildViewUrl("calendar")}
+                                        className="matches-page-view-link"
+                                        data-active={isCalendarView}
+                                        aria-current={
+                                            isCalendarView
+                                                ? "page"
+                                                : undefined
+                                        }
+                                    >
+                                        {t.matches.viewCalendar}
+                                    </Link>
+                                </div>
+
+                                <p className="matches-page-controls-note">
+                                    {isCalendarView
+                                        ? "Calendar view groups matches by competition table."
+                                        : hasTeamFilter
+                                        ? "Team filtering searches the full match directory and narrows the current slate."
+                                        : `Showing page ${urlPage} of the published schedule.`}
+                                </p>
+
+                                {editionId ? (
+                                    <Link
+                                        href={`/editions/${editionId}/competition-tables`}
+                                        className={buttonVariants({
+                                            variant: "outline",
+                                            size: "sm",
+                                        })}
+                                    >
+                                        {t.nav.competitionTables}
+                                    </Link>
+                                ) : null}
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -906,23 +912,20 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                         />
                     </div>
                 ) : null}
-                </div>
-
-                {error && <ErrorAlert message={error} />}
-
-                {!error && <MatchesTeamFilter query={teamQuery} year={year} view={view} t={t} />}
 
                 {!error && matches.length === 0 ? (
                     <EmptyState
                         className="matches-page-empty-state"
-                        title={hasTeamFilter ? "No matches found for this team" : "No matches available"}
+                        title={
+                            hasTeamFilter
+                                ? t.matches.noMatchesFoundForTeam
+                                : t.matches.noMatchesAvailable
+                        }
                         description={
                             hasTeamFilter
-                                ? "Try another team name or clear the filter."
-                                : "There are no scheduled matches yet."
+                                ? t.matches.tryAnotherTeamName
+                                : t.matches.noScheduledMatches
                         }
-                        title={hasTeamFilter ? t.matches.noMatchesFoundForTeam : t.matches.noMatchesAvailable}
-                        description={hasTeamFilter ? t.matches.tryAnotherTeamName : t.matches.noScheduledMatches}
                     />
                 ) : null}
 
@@ -934,22 +937,28 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                                     <div className="matches-page-calendar-icon">
                                         <CalendarDays aria-hidden="true" />
                                     </div>
+
                                     <p className="matches-page-calendar-copy">
-                                        Competition tables run left to right while the hour rail keeps the day visible at a glance.
+                                        Competition tables run left to right while
+                                        the hour rail keeps the day visible at a
+                                        glance.
                                     </p>
                                 </div>
+
                                 <MatchesTimeline
                                     matches={matches}
                                     labels={matchLabels}
                                     yearQuery={yearQuery}
+                                    t={t}
                                 />
                             </div>
-                            <MatchesTimeline matches={matches} labels={matchLabels} yearQuery={yearQuery} t={t} />
                         ) : (
                             <ul className="matches-page-grid">
                                 {matches.map((match, index) => {
                                     const pageOffset =
-                                        !year && !hasTeamFilter ? (urlPage - 1) * PAGE_SIZE : 0;
+                                        !year && !hasTeamFilter
+                                            ? (urlPage - 1) * PAGE_SIZE
+                                            : 0;
 
                                     return (
                                         <li
@@ -961,6 +970,7 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                                                 index={pageOffset + index}
                                                 labels={matchLabels}
                                                 yearQuery={yearQuery}
+                                                t={t}
                                             />
                                         </li>
                                     );
@@ -968,7 +978,9 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                             </ul>
                         )}
 
-                        {!year && !isCalendarView && !hasTeamFilter ? (
+                        {!year &&
+                        !isCalendarView &&
+                        !hasTeamFilter ? (
                             <div className="matches-page-pagination">
                                 <PaginationControls
                                     currentPage={urlPage}
@@ -982,18 +994,6 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                         ) : null}
                     </>
                 ) : null}
-                            <MatchesTable matches={matches} labels={matchLabels} yearQuery={yearQuery} t={t} />
-                        )}
-                        {!year && !isCalendarView && !hasTeamFilter && (
-                            <PaginationControls
-                                currentPage={urlPage}
-                                hasNext={result.hasNext}
-                                hasPrev={result.hasPrev}
-                                basePath="/matches"
-                            />
-                        )}
-                    </div>
-                )}
             </div>
         </PageShell>
     );
