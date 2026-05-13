@@ -9,6 +9,7 @@ import { Breadcrumb } from "@/app/components/breadcrumb";
 import { Volunteer } from "@/types/volunteer";
 import { parseErrorMessage } from "@/types/errors";
 import { isAdmin } from "@/lib/authz";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { fetchHalResource } from "@/api/halClient";
 import { getEncodedResourceId } from "@/lib/halRoute";
 import Link from "next/link";
@@ -78,6 +79,7 @@ async function getRefereeAssignment(volunteerUri: string) {
 }
 
 export default async function VolunteerDetailPage(props: Readonly<Props>) {
+    const t = await getServerTranslations();
     const { id } = await props.params;
     const usersService = new UsersService(serverAuthProvider);
     const volunteerService = new VolunteersService(serverAuthProvider);
@@ -111,9 +113,10 @@ export default async function VolunteerDetailPage(props: Readonly<Props>) {
        async function updateVolunteerData(uri: string, data: Partial<Volunteer>) {
         'use server';
 
+        const actionT = await getServerTranslations();
         const user = await new UsersService(serverAuthProvider).getCurrentUser();
         if (!isAdmin(user)) {
-            return { success: false, error: "Access denied: You are not an administrator" };
+            return { success: false, error: actionT.volunteers.accessDeniedAdmin };
         }
 
         try {
@@ -124,7 +127,7 @@ export default async function VolunteerDetailPage(props: Readonly<Props>) {
             return { success: false, error: parseErrorMessage(e) };
         }
     }
-    if (!volunteer) return <EmptyState title="Not found" />;
+    if (!volunteer) return <EmptyState title={t.volunteers.notFound} />;
 
     const renderAssignment = () => {
         if (volunteer.type === "Judge") {
@@ -163,31 +166,31 @@ export default async function VolunteerDetailPage(props: Readonly<Props>) {
             <div className="w-full max-w-3xl px-4 py-10">
                 <Breadcrumb
                     items={[
-                        { label: "Home", href: "/" },
-                        { label: "Volunteers", href: "/volunteers" },
-                        { label: volunteer.name || "Volunteer" },
+                        { label: t.breadcrumb.home, href: "/" },
+                        { label: t.breadcrumb.volunteers, href: "/volunteers" },
+                        { label: volunteer.name || t.volunteers.volunteerName },
                     ]}
                 />
                 <div className="w-full rounded-lg border bg-white p-6 shadow-sm dark:bg-black">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-2xl font-semibold">{volunteer.name || "Unnamed"}</h1>
+                        <h1 className="text-2xl font-semibold">{volunteer.name || t.volunteers.unnamed}</h1>
                         {volunteer.type === 'Judge' && volunteer.expert && (
                             <span className="bg-amber-100 text-amber-700 text-xs px-3 py-1 rounded-full font-bold uppercase border border-amber-200">
-                                Expert Judge
+                                {t.volunteers.expertJudge}
                             </span>
                         )}
                     </div>
                     <div className="mt-4 space-y-1 text-sm text-muted-foreground border-t pt-4">
-                        <p><strong>Role:</strong> {volunteer.type}</p>
-                        <p><strong>Email:</strong> {volunteer.emailAddress || "—"}</p>
-                        <p><strong>Phone:</strong> {volunteer.phoneNumber || "—"}</p>
-                        <p><strong>Expert:</strong> {volunteer.expert ? "Yes" : "No"}</p>
+                        <p><strong>{t.volunteers.role}:</strong> {volunteer.type}</p>
+                        <p><strong>{t.volunteers.email}:</strong> {volunteer.emailAddress || "-"}</p>
+                        <p><strong>{t.volunteers.phone}:</strong> {volunteer.phoneNumber || "-"}</p>
+                        <p><strong>{t.volunteers.expert}:</strong> {volunteer.expert ? t.volunteers.yes : t.volunteers.no}</p>
                     </div>
 
                     {volunteer.type === "Judge" && (
                         <div className="mt-6 space-y-2">
-                            <h2 className="text-xl font-semibold border-t pt-4">Judge Info</h2>
-                            <p><strong>Expert:</strong> {volunteer.expert ? "Yes" : "No"}</p>
+                            <h2 className="text-xl font-semibold border-t pt-4">{t.volunteers.judgeInfo}</h2>
+                            <p><strong>{t.volunteers.expert}:</strong> {volunteer.expert ? t.volunteers.yes : t.volunteers.no}</p>
                         </div>
                     )}
 

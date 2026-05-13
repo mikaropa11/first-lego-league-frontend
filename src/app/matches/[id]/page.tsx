@@ -12,6 +12,7 @@ import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin, isReferee } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { formatMatchDuration, formatMatchTime } from "@/lib/matchUtils";
 import { getTeamDisplayName } from "@/lib/teamUtils";
 import { Edition } from "@/types/edition";
@@ -149,6 +150,7 @@ function UnknownTeamCard({ label, name }: Readonly<{ label: string; name?: strin
 }
 
 export default async function MatchDetailPage(props: Readonly<MatchDetailPageProps>) {
+    const t = await getServerTranslations();
     const { id } = await props.params;
     const searchParams = await props.searchParams;
     const yearParam = searchParams.year;
@@ -186,7 +188,7 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
         console.error("Failed to fetch match:", e);
         matchError =
             e instanceof NotFoundError
-                ? "This match does not exist."
+                ? t.matches.matchNotFound
                 : `Could not load match details. ${parseErrorMessage(e)}`;
     }
 
@@ -302,7 +304,7 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
 
     return (
         <PageShell
-            eyebrow="Match details"
+            eyebrow={t.matches.matchDetails}
             title={getMatchTitle(match, id)}
             description={displayState ? `Status: ${displayState}` : undefined}
             heroAside={
@@ -321,8 +323,8 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
         >
             <Breadcrumb
                 items={[
-                    { label: "Home", href: "/" },
-                    { label: "Matches", href: "/matches" },
+                    { label: t.breadcrumb.home, href: "/" },
+                    { label: t.breadcrumb.matches, href: "/matches" },
                     { label: getMatchTitle(match, id) },
                 ]}
             />
@@ -333,7 +335,7 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                 <div className="flex flex-wrap justify-end gap-3">
                     <Link href={`/matches/${id}/edit`} className={buttonVariants({ variant: "secondary" })}>
                         <Pencil aria-hidden="true" />
-                        Edit
+                        {t.common.edit}
                     </Link>
                     <MatchDeleteSection matchId={id} />
                 </div>
@@ -344,25 +346,22 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                     {/* Match info */}
                     <section aria-labelledby="match-info-heading">
                         <div className="mb-4 space-y-1">
-                            <div className="page-eyebrow">Schedule</div>
+                            <div className="page-eyebrow">{t.competitionTables.schedule}</div>
                             <h2 id="match-info-heading" className="section-title">
-                                Match information
+                                {t.matches.matchInformation}
                             </h2>
                         </div>
                         <div className="rounded-lg border border-border bg-card p-5">
                             <div className="space-y-3">
-                                <InfoRow label="Start time" value={formatMatchTime(match.startTime)} />
-                                <InfoRow label="End time" value={formatMatchTime(match.endTime)} />
-                                <InfoRow
-                                    label="Duration"
-                                    value={formatMatchDuration(match.startTime, match.endTime)}
-                                />
-                                <InfoRow label="Edition" value={displayEdition} />
-                                <InfoRow label="Round" value={displayRound} />
+                                <InfoRow label={t.matches.startTime} value={formatMatchTime(match.startTime)} />
+                                <InfoRow label={t.matches.endTime} value={formatMatchTime(match.endTime)} />
+                                <InfoRow label={t.scientificProjects.edition} value={displayEdition} />
+                                <InfoRow label={t.matches.round} value={displayRound} />
                                 {match.competitionTable && (
-                                    <InfoRow label="Competition table" value={match.competitionTable} />
+                                    <InfoRow label={t.nav.competitionTables} value={match.competitionTable} />
                                 )}
-                                {match.referee && <InfoRow label="Referee" value={match.referee} />}
+                                {displayState && <InfoRow label={t.editions.stateLabel} value={displayState} />}
+                                {match.referee && <InfoRow label={t.matches.referee} value={match.referee} />}                             
 
                                 <div className="pt-2">
                                     <MatchStateControls
@@ -378,9 +377,9 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                     {/* Teams */}
                     <section aria-labelledby="teams-heading">
                         <div className="mb-4 space-y-1">
-                            <div className="page-eyebrow">Participating teams</div>
+                            <div className="page-eyebrow">{t.matches.participatingTeams}</div>
                             <h2 id="teams-heading" className="section-title">
-                                Teams
+                                {t.matches.teams}
                             </h2>
                         </div>
 
@@ -404,9 +403,9 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                     {matchResults.length > 0 && formTeamA && formTeamB && (
                         <section aria-labelledby="results-heading">
                             <div className="mb-4 space-y-1">
-                                <div className="page-eyebrow">Scores</div>
+                                <div className="page-eyebrow">{t.matches.scores}</div>
                                 <h2 id="results-heading" className="section-title">
-                                    Match Results
+                                    {t.matches.result}
                                 </h2>
                             </div>
                             <div className="rounded-lg border border-border bg-card p-5">
@@ -433,9 +432,9 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
                     {isAuthorized && formTeamA && formTeamB && numericMatchId && (
                         <section aria-labelledby="record-result-heading">
                             <div className="mb-4 space-y-1">
-                                <div className="page-eyebrow">Referee actions</div>
+                                <div className="page-eyebrow">{t.matches.refereeActions}</div>
                                 <h2 id="record-result-heading" className="section-title">
-                                    {matchResults.length > 0 ? "Edit Result" : "Record Result"}
+                                    {matchResults.length > 0 ? t.matches.editResult : t.matches.recordResult}
                                 </h2>
                             </div>
                             {!isEditionActive(edition?.state) ? (

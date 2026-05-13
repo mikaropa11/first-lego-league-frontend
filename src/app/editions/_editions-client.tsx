@@ -8,6 +8,7 @@ import { ArrowUpRight, CalendarRange, MapPin, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { getEncodedResourceId } from '@/lib/halRoute';
 import type { LucideIcon } from 'lucide-react';
+import { useTranslations } from '@/lib/languageContext';
 
 export interface EditionItem {
     uri?: string;
@@ -22,8 +23,8 @@ function getEditionHref(edition: EditionItem) {
     return editionId ? `/editions/${editionId}` : null;
 }
 
-function getEditionDisplayYear(edition: EditionItem) {
-    return edition.year !== undefined ? String(edition.year) : 'TBD';
+function getEditionDisplayYear(edition: EditionItem, t: ReturnType<typeof useTranslations>) {
+    return edition.year !== undefined ? String(edition.year) : t.editions.tbd;
 }
 
 function formatEditionState(state?: string) {
@@ -96,6 +97,7 @@ function StatCard({
 }
 
 function EditionCard({ edition }: Readonly<{ edition: EditionItem }>) {
+    const t = useTranslations();
     const href = getEditionHref(edition);
     const formattedState = formatEditionState(edition.state);
     const hasFacts = Boolean(edition.venueName || formattedState);
@@ -107,16 +109,16 @@ function EditionCard({ edition }: Readonly<{ edition: EditionItem }>) {
         >
             <div className="editions-page-edition-card__body">
                 <div className="editions-page-edition-card__masthead">
-                    <div className="editions-page-edition-card__serial">Edition archive</div>
+                    <div className="editions-page-edition-card__serial">{t.editions.editionArchive}</div>
                     {formattedState && (
                         <div className="editions-page-edition-card__badge">{formattedState}</div>
                     )}
                 </div>
 
                 <div className="editions-page-edition-card__header">
-                    <div className="editions-page-edition-card__kicker">Season</div>
+                    <div className="editions-page-edition-card__kicker">{t.editions.season}</div>
                     <h3 className="editions-page-edition-card__title">
-                        {getEditionDisplayYear(edition)}
+                        {getEditionDisplayYear(edition, t)}
                     </h3>
                 </div>
 
@@ -124,7 +126,7 @@ function EditionCard({ edition }: Readonly<{ edition: EditionItem }>) {
                     <div className="editions-page-edition-card__facts">
                         {edition.venueName && (
                             <div className="editions-page-edition-card__fact">
-                                <div className="editions-page-edition-card__fact-label">Venue</div>
+                                <div className="editions-page-edition-card__fact-label">{t.editions.venue}</div>
                                 <div className="editions-page-edition-card__fact-value">
                                     {edition.venueName}
                                 </div>
@@ -132,7 +134,7 @@ function EditionCard({ edition }: Readonly<{ edition: EditionItem }>) {
                         )}
                         {formattedState && (
                             <div className="editions-page-edition-card__fact">
-                                <div className="editions-page-edition-card__fact-label">State</div>
+                                <div className="editions-page-edition-card__fact-label">{t.editions.stateLabel}</div>
                                 <div className="editions-page-edition-card__fact-value">
                                     {formattedState}
                                 </div>
@@ -143,7 +145,7 @@ function EditionCard({ edition }: Readonly<{ edition: EditionItem }>) {
 
                 {edition.description && (
                     <div className="editions-page-edition-card__summary">
-                        <div className="editions-page-edition-card__summary-label">Edition brief</div>
+                        <div className="editions-page-edition-card__summary-label">{t.editions.editionBrief}</div>
                         <p className="editions-page-edition-card__summary-copy">
                             {edition.description}
                         </p>
@@ -158,7 +160,7 @@ function EditionCard({ edition }: Readonly<{ edition: EditionItem }>) {
                                 : 'editions-page-edition-card__action editions-page-edition-card__action--disabled'
                         }
                     >
-                        {href ? 'View details' : 'Profile unavailable'}
+                        {href ? t.editions.viewDetails : t.editions.profileUnavailable}
                         {href && <ArrowUpRight aria-hidden="true" />}
                     </div>
                 </div>
@@ -187,6 +189,7 @@ export default function EditionsClient({
     allStates?: string[];
 }>) {
     const router = useRouter();
+    const t = useTranslations();
     const [searchValue, setSearchValue] = useState(initialSearch);
     const [stateValue, setStateValue] = useState(initialState);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -215,15 +218,15 @@ export default function EditionsClient({
             <div className="editions-page-search-card">
                 <div className="editions-page-search-card__field">
                     <span className="editions-page-search-card__label">
-                        Search by year, venue or state
+                        {t.editions.searchByYearVenueState}
                     </span>
                     <div className="flex gap-3">
                         <Input
                             type="search"
                             value={searchValue}
                             onChange={(event) => handleSearchChange(event.target.value)}
-                            placeholder="Search editions..."
-                            aria-label="Search editions by year, venue or state"
+                            placeholder={t.editions.searchPlaceholder}
+                            aria-label={t.editions.searchByYearVenueStateLabel}
                             className="editions-page-search-input"
                         />
                         <select
@@ -233,9 +236,9 @@ export default function EditionsClient({
                                 updateParams(searchValue, e.target.value);
                             }}
                             className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                            aria-label="Filter by state"
+                            aria-label={t.editions.filterByState}
                         >
-                            <option value="">All states</option>
+                            <option value="">{t.editions.allStates}</option>
                             {allStates.map((s) => (
                                 <option key={s} value={s}>
                                     {formatEditionState(s)}
@@ -249,45 +252,45 @@ export default function EditionsClient({
             <div className="editions-page-stats-grid">
                 <StatCard
                     icon={CalendarRange}
-                    label="Seasons in view"
+                    label={t.editions.seasonsInView}
                     value={String(editions.length)}
                     description={
                         editions.length > 0
-                            ? 'The visible archive is organized as editorial season cards.'
-                            : 'No season matches the current search.'
+                            ? t.editions.seasonsInViewDescription
+                            : t.editions.noSeasonMatchesSearch
                     }
                 />
                 <StatCard
                     icon={MapPin}
-                    label="Venues listed"
+                    label={t.editions.venuesListed}
                     value={String(venueCount)}
                     description={
                         venueCount > 0
-                            ? 'Distinct host locations currently visible in the archive.'
-                            : 'Venue data is not present in the current results.'
+                            ? t.editions.venuesListedDescription
+                            : t.editions.venueDataUnavailable
                     }
                 />
                 <StatCard
                     icon={Sparkles}
-                    label="States tracked"
+                    label={t.editions.statesTracked}
                     value={String(stateCount)}
                     description={
                         latestEditionYear !== null
-                            ? `Latest visible season: ${latestEditionYear}.`
-                            : 'Season metadata is not available in the current results.'
+                            ? t.editions.latestVisibleSeason.replace('{year}', String(latestEditionYear))
+                            : t.editions.seasonMetadataUnavailable
                     }
                 />
             </div>
 
             {editions.length === 0 ? (
                 <EmptyState
-                    title="No editions found"
+                    title={t.editions.noEditions}
                     description={
                         initialSearch.trim()
-                            ? `No editions match "${initialSearch}". Try a different year, venue or state.`
+                            ? t.editions.noEditionsMatch.replace('{query}', initialSearch)
                             : initialState
-                                ? `No editions found for the selected state. Try a different year, venue or state.`
-                                : 'There are currently no editions available to display.'
+                                ? t.editions.noEditionsForState
+                                : t.editions.noEditionsAvailable
                     }
                 />
             ) : (

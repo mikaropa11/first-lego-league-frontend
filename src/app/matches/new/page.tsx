@@ -6,6 +6,7 @@ import ErrorAlert from "@/app/components/error-alert";
 import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { getTeamDisplayName } from "@/lib/teamUtils";
 import { CompetitionTable } from "@/types/competitionTable";
 import { AuthenticationError, parseErrorMessage } from "@/types/errors";
@@ -93,6 +94,7 @@ function sortOptions(options: Option[]) {
 }
 
 export default async function NewMatchPage() {
+    const t = await getServerTranslations();
     const auth = await serverAuthProvider.getAuth();
     if (!auth) redirect("/login");
 
@@ -151,9 +153,9 @@ export default async function NewMatchPage() {
 
     return (
         <PageShell
-            eyebrow="Competition schedule"
-            title="New Match"
-            description="Create a scheduled match by assigning timing, round, table, teams, and referee."
+            eyebrow={t.matches.competitionSchedule}
+            title={t.matches.newMatch}
+            description={t.matches.createMatchDescription}
         >
             {error ? (
                 <ErrorAlert message={error} />

@@ -5,6 +5,7 @@ import EmptyState from "@/app/components/empty-state";
 import AdministratorList from "./administrator-list";
 import CreateAdministrator from "./create-administrator";
 import { serverAuthProvider } from "@/lib/authProvider";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { User } from "@/types/user";
 import { parseErrorMessage } from "@/types/errors";
 import { redirect } from "next/navigation";
@@ -16,6 +17,7 @@ function isAdmin(user: User | null) {
 }
 
 export default async function AdministratorsPage() {
+    const t = await getServerTranslations();
     const auth = await serverAuthProvider.getAuth();
     if (!auth) redirect("/login");
 
@@ -54,16 +56,16 @@ export default async function AdministratorsPage() {
 
     return (
         <PageShell
-            eyebrow="Administration"
-            title="Administrators"
-            description="Browse the administrators registered in the platform."
+            eyebrow={t.administrators.eyebrow}
+            title={t.administrators.title}
+            description={t.administrators.description}
         >
             <div className="space-y-6">
                 <div className="space-y-3">
-                    <div className="page-eyebrow">System administrators</div>
-                    <h2 className="section-title">Directory</h2>
+                    <div className="page-eyebrow">{t.administrators.systemAdministrators}</div>
+                    <h2 className="section-title">{t.administrators.directory}</h2>
                     <p className="section-copy max-w-3xl">
-                        Select an administrator to view profile details.
+                        {t.administrators.selectAdministrator}
                     </p>
                 </div>
 
@@ -73,8 +75,8 @@ export default async function AdministratorsPage() {
 
                 {!error && administrators.length === 0 && (
                     <EmptyState
-                        title="No administrators found"
-                        description="There are currently no administrators in the system."
+                        title={t.administrators.noAdministrators}
+                        description={t.administrators.noAdministratorsDescription}
                     />
                 )}
 

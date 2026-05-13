@@ -3,6 +3,7 @@
 import { UsersService } from "@/api/userApi";
 import ConfirmDestructiveDialog from "@/app/components/confirm-destructive-dialog";
 import { clientAuthProvider } from "@/lib/authProvider";
+import { useTranslations } from "@/lib/languageContext";
 import { UserEntity } from "@/types/user";
 
 interface DeleteAdministratorDialogProps {
@@ -16,6 +17,7 @@ export default function DeleteAdministratorDialog({
   onSuccess,
   onCancel,
 }: DeleteAdministratorDialogProps) {
+  const t = useTranslations();
   const service = new UsersService(clientAuthProvider);
 
   // Open as a native modal — built-in focus trap, backdrop and accessibility
@@ -30,11 +32,10 @@ export default function DeleteAdministratorDialog({
 
   return (
     <ConfirmDestructiveDialog
-      title="Delete administrator"
+      title={t.administrators.deleteAdministrator}
       description={
         <p>
-          Are you sure you want to delete{" "}
-          <span className="font-semibold text-foreground">
+          {t.administrators.deleteAdministratorConfirmationPrefix} <span className="font-semibold text-foreground">
             {administrator.username}
           </span>
           {administrator.email && (
@@ -43,11 +44,12 @@ export default function DeleteAdministratorDialog({
               (<span className="text-foreground">{administrator.email}</span>)
             </>
           )}
-          ? This action cannot be undone.
+          {" "}
+          {t.administrators.deleteAdministratorConfirmationSuffix}
         </p>
       }
-      confirmLabel="Delete administrator"
-      pendingLabel="Deleting..."
+      confirmLabel={t.administrators.deleteAdministrator}
+      pendingLabel={t.common.loading}
       onConfirm={handleDelete}
       onCancel={onCancel}
     />

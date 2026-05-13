@@ -18,6 +18,7 @@ import { serverAuthProvider } from "@/lib/authProvider";
 import { getAwardWinnerTeamUri, normalizeUri } from "@/lib/awardUtils";
 import { isAdmin } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { getTeamDisplayName } from "@/lib/teamUtils";
 import { Award } from "@/types/award";
 import { Round } from "@/types/round";
@@ -140,6 +141,7 @@ function toMediaItem(content: MediaContent, editionUri: string | null | undefine
 }
 
 export default async function EditionDetailPage(props: Readonly<EditionDetailPageProps>) {
+    const t = await getServerTranslations();
     const { id } = await props.params;
 
     async function deleteEditionAction() {
@@ -176,7 +178,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
     } catch (e) {
         console.error("Failed to fetch edition:", e);
         error = isNotFoundLikeError(e)
-            ? "This edition does not exist."
+            ? t.errors.pageNotFound
             : parseErrorMessage(e);
     }
 
@@ -244,8 +246,8 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
             <div className="w-full max-w-3xl px-4 py-10">
                 <Breadcrumb
                     items={[
-                        { label: "Home", href: "/" },
-                        { label: "Editions", href: "/editions" },
+                        { label: t.breadcrumb.home, href: "/" },
+                        { label: t.breadcrumb.editions, href: "/editions" },
                         { label: getEditionTitle(edition, id) },
                     ]}
                 />
@@ -310,15 +312,15 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                     {!error && (
                         <>
                             <h2 className="mt-8 mb-4 text-xl font-semibold text-foreground">
-                                Participating Teams
+                                {t.editions.participatingTeams}
                             </h2>
 
                             {teamsError && <ErrorAlert message={teamsError} />}
 
                             {!teamsError && teams.length === 0 && (
                                 <EmptyState
-                                    title="No teams found"
-                                    description="No teams are registered for this edition yet."
+                                    title={t.teams.noTeams}
+                                    description={t.editions.noTeamsInEdition}
                                 />
                             )}
 
@@ -387,8 +389,8 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                             {!teamsError && teams.length > 0 && !awardsError && awards.length === 0 && (
                                 <div className="mt-6">
                                     <EmptyState
-                                        title="No awards yet"
-                                        description="Awards for this edition have not been published yet."
+                                        title={t.editions.noAwardsYet}
+                                        description={t.editions.noAwardsYetDescription}
                                     />
                                 </div>
                             )}
@@ -423,7 +425,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
                             </section>
 
                             <h2 className="mt-8 mb-4 text-xl font-semibold text-foreground">
-                                Final Classification
+                                {t.editions.finalClassification}
                             </h2>
 
                             <div className="mb-4">
@@ -436,17 +438,24 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
 
                             {!classificationError && leaderboardItems.length === 0 && (
                                 <EmptyState
-                                    title="No results yet"
-                                    description="Classification will appear once match results are recorded."
+                                    title={t.editions.noResultsYet}
+                                    description={t.editions.noResultsYetDescription}
                                 />
                             )}
 
                             {!classificationError && leaderboardItems.length > 0 && (
-                                <LeaderboardTable items={leaderboardItems} />
+                                <LeaderboardTable
+                                    items={leaderboardItems}
+                                    labels={{
+                                        team: t.table.team,
+                                        totalScore: t.table.totalScore,
+                                        matchesPlayed: t.table.matchesPlayed,
+                                    }}
+                                />
                             )}
 
                             <h2 className="mt-8 mb-4 text-xl font-semibold text-foreground">
-                                Rounds
+                                {t.editions.rounds}
                             </h2>
 
                             {roundsError && <ErrorAlert message={roundsError} />}
@@ -460,7 +469,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
 
                             <section id="media-section">
                                 <h2 className="mt-8 mb-4 text-xl font-semibold text-foreground">
-                                    Media Gallery
+                                    {t.editions.mediaGallery}
                                 </h2>
 
                                 {currentUser && isAdmin(currentUser) && edition && !isEditionFinished(edition?.state) && (
@@ -475,8 +484,8 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
 
                                 {!mediaError && mediaContents.length === 0 && (
                                     <EmptyState
-                                        title="No media found"
-                                        description="No media has been added to this edition yet."
+                                        title={t.editions.noMediaFound}
+                                        description={t.editions.noMediaFoundDescription}
                                     />
                                 )}
                             </section>

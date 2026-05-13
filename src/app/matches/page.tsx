@@ -12,6 +12,8 @@ import PaginationControls from "@/app/components/pagination-controls";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
+import { getServerTranslations } from "@/lib/i18n/server";
+import type { Translations } from "@/lib/i18n";
 import { filterMatchesByTeam, normalizeTeamSearch } from "@/lib/matchFilter";
 import { formatMatchDuration, formatMatchTime } from "@/lib/matchUtils";
 import { cn } from "@/lib/utils";
@@ -76,9 +78,9 @@ const emptyMatchesPage: HalPage<Match> = {
     currentPage: 0,
 };
 
-function getTeamsLabel(match: Match, labels: Record<string, string>) {
+function getTeamsLabel(match: Match, labels: Record<string, string>, t: Translations) {
     const key = match.link("self")?.href ?? match.uri;
-    return labels[key] ?? "Unknown Team vs Unknown Team";
+    return labels[key] ?? t.matches.unknownTeams;
 }
 
 function getMatchKey(match: Match, index: number) {
@@ -228,9 +230,9 @@ function getParticipantLabel(value: string | null | undefined, fallback: string)
     return fallback;
 }
 
-function getMatchParticipants(match: Match, labels: Record<string, string>) {
+function getMatchParticipants(match: Match, labels: Record<string, string>, t: Translations) {
     const { teamA: fallbackTeamA, teamB: fallbackTeamB } = splitMatchLabel(
-        getTeamsLabel(match, labels),
+        getTeamsLabel(match, labels, t),
     );
 
     return {
@@ -293,6 +295,64 @@ function getMatchStats(matches: Match[]): MatchStats {
     };
 }
 
+function MatchesTeamFilter({
+    query,
+    year,
+    view,
+    t,
+}: Readonly<{ query: string; year?: string; view?: string; t: Translations }>) {
+    const resetParams = new URLSearchParams();
+    if (year) resetParams.set("year", year);
+    if (view === "calendar") resetParams.set("view", view);
+    const resetHref = resetParams.toString() ? `/matches?${resetParams.toString()}` : "/matches";
+
+    return (
+        <form action="/matches" className="matches-page-search-form">
+            {year ? <input type="hidden" name="year" value={year} /> : null}
+            {view === "calendar" ? <input type="hidden" name="view" value={view} /> : null}
+
+            <div className="min-w-0 space-y-2">
+                <label htmlFor="team-search" className="text-sm font-medium text-foreground">
+                    {t.matches.teamFilterLabel}
+                </label>
+                <Input
+                    id="team-search"
+                    name="team"
+                    type="search"
+                    defaultValue={query}
+                    placeholder={t.matches.searchByTeamName}
+                    autoComplete="off"
+                />
+            </div>
+
+            <div className="matches-page-search-actions">
+                <button
+                    type="submit"
+                    className={cn(
+                        buttonVariants({ variant: "secondary", size: "default" }),
+                        "matches-page-search-button",
+                    )}
+                >
+                    {t.matches.search}
+                </button>
+                <div className="flex gap-2">
+                    {query ? (
+                        <Link
+                            href={resetHref}
+                            className={cn(
+                                buttonVariants({ variant: "ghost", size: "default" }),
+                                "matches-page-reset-button",
+                            )}
+                        >
+                            {t.matches.reset}
+                        </Link>
+                    ) : null}
+                </div>
+            </div>
+        </form>
+    );
+}
+
 function StatCard({
     icon: Icon,
     label,
@@ -322,21 +382,87 @@ function StatCard({
     );
 }
 
+function MatchesTable({
+    matches,
+    labels,
+    yearQuery,
+    t,
+}: Readonly<{ matches: Match[]; labels: Record<string, string>; yearQuery: string; t: Translations }>) {
+    return (
+        <div className="overflow-hidden border border-border">
+            <div className="overflow-x-auto">
+                <table className="w-full min-w-2xl border-collapse text-left">
+                    <caption className="sr-only">{t.matches.listCaption}</caption>
+                    <thead className="bg-secondary/70">
+                        <tr>
+                            <th className="px-4 py-3 text-sm font-semibold text-foreground sm:px-5">{t.matches.startTime}</th>
+                            <th className="px-4 py-3 text-sm font-semibold text-foreground sm:px-5">{t.matches.endTime}</th>
+                            <th className="px-4 py-3 text-sm font-semibold text-foreground sm:px-5">{t.matches.teams}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {matches.map((match, index) => {
+                            const matchId = getEncodedResourceId(match.link("self")?.href ?? match.uri);
+                            return (
+                                <tr
+                                    key={getMatchKey(match, index)}
+                                    className={cn(
+                                        "border-t border-border transition-colors hover:bg-secondary/40",
+                                        match.state === "IN_PROGRESS" && "border-l-2 border-l-red-500 bg-red-500/5"
+                                    )}
+                                >
+                                    <td className="px-4 py-4 text-sm text-foreground sm:px-5">
+                                        {formatMatchTime(match.startTime)}
+                                    </td>
+                                    <td className="px-4 py-4 text-sm text-foreground sm:px-5">
+                                        {formatMatchTime(match.endTime)}
+                                    </td>
+                                    <td className="px-4 py-4 text-sm text-muted-foreground sm:px-5">
+                                        <div className="flex items-center gap-2">
+                                            {match.state === "IN_PROGRESS" && (
+                                                <span className="inline-flex animate-pulse items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-700">
+                                                    {t.matches.live}
+                                                </span>
+                                            )}
+                                            {matchId ? (
+                                                <Link
+                                                    href={`/matches/${matchId}${yearQuery}`}
+                                                    className="hover:text-foreground hover:underline underline-offset-2"
+                                                >
+                                                    {getTeamsLabel(match, labels, t)}
+                                                </Link>
+                                            ) : (
+                                                getTeamsLabel(match, labels, t)
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
 function MatchCard({
     match,
     index,
     labels,
     yearQuery,
+    t,
 }: Readonly<{
     match: Match;
     index: number;
     labels: Record<string, string>;
     yearQuery: string;
+    t: Translations;
 }>) {
     const tone = getMatchTone(match.state);
     const stateLabel = getMatchStateLabel(match.state);
-    const teamsLabel = getTeamsLabel(match, labels);
-    const { teamA, teamB } = getMatchParticipants(match, labels);
+    const teamsLabel = getTeamsLabel(match, labels, t);
+    const { teamA, teamB } = getMatchParticipants(match, labels, t);
     const matchHref = getMatchHref(match, yearQuery);
     const cardContent = (
         <article className="matches-page-match-card" data-state={tone}>
@@ -440,111 +566,14 @@ function MatchCard({
     );
 }
 
-function getFriendlyMatchesError(error: unknown) {
+function getFriendlyMatchesError(error: unknown, t: Translations) {
     const parsedMessage = parseErrorMessage(error);
 
     if (parsedMessage === "An unexpected error occurred. Please try again.") {
-        return "We could not load the matches right now. Please try again in a few minutes.";
+        return t.matches.matchesLoadError;
     }
 
-    return `We could not load the matches. ${parsedMessage}`;
-}
-
-function getMatchFilterChips({
-    year,
-    teamQuery,
-    startTime,
-    endTime,
-    tableId,
-    roundId,
-    isCalendarView,
-    hasScheduleFilters,
-}: MatchesSearchState): MatchFilterChip[] {
-    const chips: MatchFilterChip[] = [];
-
-    if (year) {
-        chips.push({ key: "year", label: `Edition ${year}` });
-    }
-
-    if (teamQuery) {
-        chips.push({ key: "team", label: `Team: ${teamQuery}` });
-    }
-
-    if (startTime) {
-        chips.push({ key: "startTime", label: `Start: ${startTime.replace("T", " ")}` });
-    }
-
-    if (endTime) {
-        chips.push({ key: "endTime", label: `End: ${endTime.replace("T", " ")}` });
-    }
-
-    if (tableId) {
-        chips.push({ key: "tableId", label: `Table: ${tableId}` });
-    }
-
-    if (roundId) {
-        chips.push({ key: "roundId", label: `Round: ${roundId}` });
-    }
-
-    if (hasScheduleFilters || isCalendarView) {
-        chips.push({
-            key: "view",
-            label: isCalendarView ? "Calendar view" : "List view",
-        });
-    }
-
-    return chips;
-}
-
-function getMatchesControlsNote({
-    isCalendarView,
-    hasScheduleFilters,
-    hasTeamFilter,
-    urlPage,
-}: Pick<MatchesSearchState, "isCalendarView" | "hasScheduleFilters" | "hasTeamFilter" | "urlPage">) {
-    if (isCalendarView) {
-        return "Calendar view groups matches by competition table.";
-    }
-
-    if (hasScheduleFilters) {
-        return "Use the filters below to narrow matches by time, table, or round.";
-    }
-
-    if (hasTeamFilter) {
-        return "Team filtering searches the full match directory and narrows the current slate.";
-    }
-
-    return `Showing page ${urlPage} of the published schedule.`;
-}
-
-function getEmptyStateTitle({
-    hasScheduleFilters,
-    hasTeamFilter,
-}: Pick<MatchesSearchState, "hasScheduleFilters" | "hasTeamFilter">) {
-    if (hasScheduleFilters) {
-        return "No matches found for these filters";
-    }
-
-    if (hasTeamFilter) {
-        return "No matches found for this team";
-    }
-
-    return "No matches available";
-}
-
-function getEmptyStateDescription({
-    hasScheduleFilters,
-    hasTeamFilter,
-}: Pick<MatchesSearchState, "hasScheduleFilters" | "hasTeamFilter">) {
-    if (hasScheduleFilters) {
-        return "Try adjusting the time, table, or round filters, or clear them to see more matches.";
-    }
-
-    if (hasTeamFilter) {
-        return "Try another team name or clear the filter.";
-    }
-
-    return "There are no scheduled matches yet.";
+    return `${t.matches.matchesLoadErrorPrefix} ${parsedMessage}`;
 }
 
 function getMatchesSearchState(params: Record<string, string | string[] | undefined>): MatchesSearchState {
@@ -715,6 +744,7 @@ async function resolveMatchLabels(matches: Match[]) {
 }
 
 export default async function MatchesPage({ searchParams }: Readonly<{ searchParams: PageSearchParams }>) {
+    const t = await getServerTranslations();
     const searchState = getMatchesSearchState(await searchParams);
     const {
         year,
@@ -747,26 +777,7 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
         matches = filterMatchesByTeam(matches, matchLabels, normalizedTeamQuery);
     } catch (fetchError) {
         console.error("Failed to fetch matches:", fetchError);
-        error = getFriendlyMatchesError(fetchError);
-    }
-
-    try {
-        const tableService = new CompetitionTableService(serverAuthProvider);
-        const roundsService = new RoundsService(serverAuthProvider);
-        const [tablesResult, roundsResult] = await Promise.allSettled([
-            tableService.getTables(),
-            roundsService.getRounds(),
-        ]);
-
-        if (tablesResult.status === "fulfilled") {
-            competitionTables = tablesResult.value;
-        }
-
-        if (roundsResult.status === "fulfilled") {
-            rounds = roundsResult.value;
-        }
-    } catch (fetchError) {
-        console.error("Failed to load filter options:", fetchError);
+        error = getFriendlyMatchesError(fetchError, t);
     }
 
     function buildViewUrl(newView: string) {
@@ -789,85 +800,154 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
 
     return (
         <PageShell
-            eyebrow="Competition schedule"
-            title="Matches"
-            description="Browse the scheduled matches with timing details and participating teams."
+            eyebrow={t.matches.competitionSchedule}
+            title={t.matches.title}
+            description={t.matches.description}
             bannerClassName="matches-page-banner"
             panelClassName="matches-page-panel"
-            heroAside={hasHeroActions ? (
-                <div className="matches-page-action-stack">
-                    {editionId ? (
-                        <Link
-                            href={`/editions/${editionId}/competition-tables`}
-                            className={cn(
-                                buttonVariants({ variant: "outline", size: "sm" }),
-                                "matches-page-secondary-button",
-                            )}
-                        >
-                            <span className="matches-page-secondary-button__label">
-                                Competition tables
-                            </span>
-                            <ArrowUpRight aria-hidden="true" />
-                        </Link>
-                    ) : null}
-                    {isAdmin(currentUser) ? (
-                        <Link
-                            href={`/matches/new${yearQuery}`}
-                            className={cn(
-                                buttonVariants({ variant: "default", size: "sm" }),
-                                "matches-page-create-button",
-                            )}
-                        >
-                            <span className="matches-page-create-button__label">
-                                New match
-                            </span>
-                            <ArrowUpRight aria-hidden="true" />
-                        </Link>
-                    ) : null}
-                </div>
-            ) : undefined}
+            heroAside={
+                hasHeroActions ? (
+                    <div className="matches-page-action-stack">
+                        {editionId ? (
+                            <Link
+                                href={`/editions/${editionId}/competition-tables`}
+                                className={cn(
+                                    buttonVariants({
+                                        variant: "outline",
+                                        size: "sm",
+                                    }),
+                                    "matches-page-secondary-button",
+                                )}
+                            >
+                                <span className="matches-page-secondary-button__label">
+                                    {t.nav.competitionTables}
+                                </span>
+
+                                <ArrowUpRight aria-hidden="true" />
+                            </Link>
+                        ) : null}
+
+                        {isAdmin(currentUser) ? (
+                            <Link
+                                href={`/matches/new${yearQuery}`}
+                                className={cn(
+                                    buttonVariants({
+                                        variant: "default",
+                                        size: "sm",
+                                    }),
+                                    "matches-page-create-button",
+                                )}
+                            >
+                                <span className="matches-page-create-button__label">
+                                    + {t.common.create}
+                                </span>
+
+                                <ArrowUpRight aria-hidden="true" />
+                            </Link>
+                        ) : null}
+                    </div>
+                ) : undefined
+            }
         >
             <div className="matches-page-content">
                 <section className="matches-page-search-shell">
-                    <div className="matches-page-search-copy">
-                        <div className="page-eyebrow">Live Listing</div>
-                        <h2 className="section-title">Match schedule</h2>
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="space-y-3">
+                            <div className="page-eyebrow">
+                                {t.matches.liveListing}
+                            </div>
 
-                        {filterChips.length > 0 ? (
-                            <div className="matches-page-filter-chips">
-                                {filterChips.map((chip) => (
-                                    <span key={chip.key} className="matches-page-filter-chip">
-                                        {chip.label}
+                            <h2 className="section-title">
+                                {t.matches.matchSchedule}
+                            </h2>
+
+                            {year || teamQuery || isCalendarView ? (
+                                <div className="matches-page-filter-chips">
+                                    {year ? (
+                                        <span className="matches-page-filter-chip">
+                                            Edition {year}
+                                        </span>
+                                    ) : null}
+
+                                    {teamQuery ? (
+                                        <span className="matches-page-filter-chip">
+                                            Team: {teamQuery}
+                                        </span>
+                                    ) : null}
+
+                                    <span className="matches-page-filter-chip">
+                                        {isCalendarView
+                                            ? "Calendar view"
+                                            : "List view"}
                                     </span>
-                                ))}
-                            </div>
-                        ) : null}
-                    </div>
+                                </div>
+                            ) : null}
+                        </div>
 
-                    <div className="matches-page-controls">
-                        <div className="matches-page-utility-panel">
-                            <div className="matches-page-view-toggle" aria-label="View options">
-                                <Link
-                                    href={buildViewUrl("list")}
-                                    className="matches-page-view-link"
-                                    data-active={!isCalendarView}
-                                    aria-current={!isCalendarView ? "page" : undefined}
-                                >
-                                    List
-                                </Link>
-                                <Link
-                                    href={buildViewUrl("calendar")}
-                                    className="matches-page-view-link"
-                                    data-active={isCalendarView}
-                                    aria-current={isCalendarView ? "page" : undefined}
-                                >
-                                    Calendar
-                                </Link>
-                            </div>
+                        <div className="matches-page-controls">
+                            {!error ? (
+                                <div className="matches-page-search">
+                                    <MatchesTeamFilter
+                                        query={teamQuery}
+                                        year={year}
+                                        view={view}
+                                        t={t}
+                                    />
+                                </div>
+                            ) : null}
 
-                            <p className="matches-page-controls-note">
-                                {getMatchesControlsNote(searchState)}
-                            </p>
+                            <div className="matches-page-utility-panel">
+                                <div
+                                    className="matches-page-view-toggle"
+                                    aria-label="View options"
+                                >
+                                    <Link
+                                        href={buildViewUrl("list")}
+                                        className="matches-page-view-link"
+                                        data-active={!isCalendarView}
+                                        aria-current={
+                                            !isCalendarView
+                                                ? "page"
+                                                : undefined
+                                        }
+                                    >
+                                        {t.matches.viewList}
+                                    </Link>
+
+                                    <Link
+                                        href={buildViewUrl("calendar")}
+                                        className="matches-page-view-link"
+                                        data-active={isCalendarView}
+                                        aria-current={
+                                            isCalendarView
+                                                ? "page"
+                                                : undefined
+                                        }
+                                    >
+                                        {t.matches.viewCalendar}
+                                    </Link>
+                                </div>
+
+                                <p className="matches-page-controls-note">
+                                    {isCalendarView
+                                        ? "Calendar view groups matches by competition table."
+                                        : hasTeamFilter
+                                        ? "Team filtering searches the full match directory and narrows the current slate."
+                                        : `Showing page ${urlPage} of the published schedule.`}
+                                </p>
+
+                                {editionId ? (
+                                    <Link
+                                        href={`/editions/${editionId}/competition-tables`}
+                                        className={buttonVariants({
+                                            variant: "outline",
+                                            size: "sm",
+                                        })}
+                                    >
+                                        {t.nav.competitionTables}
+                                    </Link>
+                                ) : null}
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -927,8 +1007,16 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                 {!error && matches.length === 0 ? (
                     <EmptyState
                         className="matches-page-empty-state"
-                        title={getEmptyStateTitle(searchState)}
-                        description={getEmptyStateDescription(searchState)}
+                        title={
+                            hasTeamFilter
+                                ? t.matches.noMatchesFoundForTeam
+                                : t.matches.noMatchesAvailable
+                        }
+                        description={
+                            hasTeamFilter
+                                ? t.matches.tryAnotherTeamName
+                                : t.matches.noScheduledMatches
+                        }
                     />
                 ) : null}
 
@@ -940,21 +1028,28 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                                     <div className="matches-page-calendar-icon">
                                         <CalendarDays aria-hidden="true" />
                                     </div>
+
                                     <p className="matches-page-calendar-copy">
-                                        Competition tables run left to right while the hour rail keeps the day visible at a glance.
+                                        Competition tables run left to right while
+                                        the hour rail keeps the day visible at a
+                                        glance.
                                     </p>
                                 </div>
+
                                 <MatchesTimeline
                                     matches={matches}
                                     labels={matchLabels}
                                     yearQuery={yearQuery}
+                                    t={t}
                                 />
                             </div>
                         ) : (
                             <ul className="matches-page-grid">
                                 {matches.map((match, index) => {
                                     const pageOffset =
-                                        !year && !hasTeamFilter ? (urlPage - 1) * PAGE_SIZE : 0;
+                                        !year && !hasTeamFilter
+                                            ? (urlPage - 1) * PAGE_SIZE
+                                            : 0;
 
                                     return (
                                         <li
@@ -966,6 +1061,7 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                                                 index={pageOffset + index}
                                                 labels={matchLabels}
                                                 yearQuery={yearQuery}
+                                                t={t}
                                             />
                                         </li>
                                     );
@@ -973,7 +1069,9 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                             </ul>
                         )}
 
-                        {!isCalendarView && (searchState.hasScheduleFilters || (!year && !hasTeamFilter)) ? (
+                        {!year &&
+                        !isCalendarView &&
+                        !hasTeamFilter ? (
                             <div className="matches-page-pagination">
                                 <PaginationControls
                                     currentPage={urlPage}

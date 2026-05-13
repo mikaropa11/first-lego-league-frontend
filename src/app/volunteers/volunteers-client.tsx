@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { DeleteVolunteerDialog } from './delete-volunteer-dialog';
+import { useTranslations } from '@/lib/languageContext';
 
 const SECTION_PAGE_SIZE = 6;
 
@@ -391,6 +392,7 @@ function VolunteerSection({
     isAdmin,
     onDeleteRequest,
 }: Readonly<VolunteerSectionProps>) {
+    const t = useTranslations();
     const [query, setQuery] = useState('');
     const [page, setPage] = useState(1);
 
@@ -410,6 +412,69 @@ function VolunteerSection({
     const searchId = `${id}-search`;
 
     return (
+        <div className="space-y-4 pt-4">
+            <h3 className="text-xl font-semibold">{title}</h3>
+
+            <Input
+                type="search"
+                placeholder={t.volunteers.searchRole.replace('{role}', typePlural)}
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+            />
+
+            {filtered.length === 0 ? (
+                <EmptyState title={`${t.common.noResults}: ${typePlural}`} description={emptyMessage} />
+            ) : (
+                <ul className="list-grid">
+                    {filtered.map((v, idx) => {
+                        const id = v.uri ? encodeURIComponent(v.uri) : `unknown-${idx}`;
+
+                        return (
+                            <li key={id} className="list-card pl-7 flex items-center justify-between">
+                                <div>
+                                    <div className="list-kicker">{v.type}</div>
+                                    <div className="flex items-center gap-2">
+                                        <Link href={`/volunteers/${id}`}>
+                                            <span className="list-title font-medium hover:underline cursor-pointer">
+                                                {v.name || t.volunteers.unknown}
+                                            </span>
+                                        </Link>
+
+                                        {v.expert && (
+                                            <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-amber-200">
+                                                {t.volunteers.expert}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {v.emailAddress && (
+                                        <div className="list-support">{v.emailAddress}</div>
+                                    )}
+                                </div>
+
+                                {isAdmin && (
+                                    <div className="flex items-center gap-2">
+                                        <Link
+                                            href={`/volunteers/${id}?edit=true`}
+                                            className={buttonVariants({ variant: "outline", size: "sm" })}
+                                            aria-label={`${t.common.edit} ${v.expert ? `${t.volunteers.expert} ` : ''}${v.name ?? t.volunteers.unknownVolunteer}`}
+                                        >
+                                            {t.common.edit}
+                                        </Link>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => v.name && v.uri && onDeleteRequest({ name: v.name, uri: v.uri })}
+                                            aria-label={`${t.common.delete} ${v.name ?? t.volunteers.unknownVolunteer}`}
+                                        >
+                                            {t.common.delete}
+                                        </Button>
+                                    </div>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
         <section id={id} className="volunteers-page-section" data-role={tone}>
             <div className="volunteers-page-section__header">
                 <div className="volunteers-page-section__copy">
@@ -523,6 +588,7 @@ export default function VolunteersClient({
         uri: string;
     } | null>(null);
     const router = useRouter();
+    const t = useTranslations();
 
     const expertJudgeCount = countExperts(judges);
     const expertRefereeCount = countExperts(referees);
@@ -580,59 +646,50 @@ export default function VolunteersClient({
                 />
                 <StatCard
                     icon={Scale}
-                    label="Judges"
+                    label={t.volunteers.judges}
                     value={String(judges.length)}
-                    description={
-                        expertJudgeCount > 0
-                            ? `${expertJudgeCount} expert judge${expertJudgeCount === 1 ? '' : 's'} available for advanced review panels.`
-                            : 'Judging coverage for project evaluation and scoring.'
-                    }
+                    description={t.volunteers.judgesDescription}
                 />
                 <StatCard
                     icon={Flag}
-                    label="Referees"
+                    label={t.volunteers.referees}
                     value={String(referees.length)}
-                    description={
-                        expertRefereeCount > 0
-                            ? `${expertRefereeCount} expert referee${expertRefereeCount === 1 ? '' : 's'} available for complex match oversight.`
-                            : 'Match officiating coverage for competition tables.'
-                    }
+                    description={t.volunteers.refereesDescription}
                 />
                 <StatCard
-                    icon={LifeBuoy}
-                    label="Floaters"
+                    icon={Users}
+                    label={t.volunteers.floaters}
                     value={String(floaters.length)}
-                    description="Flexible support crew ready to fill operational gaps on event day."
+                    description={t.volunteers.floatersDescription}
                 />
             </div>
 
-            {totalCount === 0 ? (
-                <div className="volunteers-page-empty-shell">
-                    <EmptyState
-                        title="No volunteers found"
-                        description="There are currently no volunteers available to display."
-                    />
-                </div>
-            ) : (
-                <div className="volunteers-page-sections">
-                    {sections.map((section) => (
-                        <VolunteerSection
-                            key={section.id}
-                            id={section.id}
-                            tone={section.tone}
-                            title={section.title}
-                            typePlural={section.typePlural}
-                            description={section.description}
-                            volunteers={section.volunteers}
-                            emptyMessage={section.emptyMessage}
-                            icon={section.icon}
-                            isAdmin={isAdmin}
-                            onDeleteRequest={setSelectedForDelete}
-                        />
-                    ))}
-                </div>
-            )}
+            <VolunteerSection
+                title={t.volunteers.judges}
+                typePlural={t.volunteers.judges.toLowerCase()}
+                volunteers={judges}
+                emptyMessage={t.volunteers.noJudges}
+                isAdmin={isAdmin}
+                onDeleteRequest={setSelectedForDelete}
+            />
+            <VolunteerSection
+                title={t.volunteers.referees}
+                typePlural={t.volunteers.referees.toLowerCase()}
+                volunteers={referees}
+                emptyMessage={t.volunteers.noReferees}
+                isAdmin={isAdmin}
+                onDeleteRequest={setSelectedForDelete}
+            />
+            <VolunteerSection
+                title={t.volunteers.floaters}
+                typePlural={t.volunteers.floaters.toLowerCase()}
+                volunteers={floaters}
+                emptyMessage={t.volunteers.noFloaters}
+                isAdmin={isAdmin}
+                onDeleteRequest={setSelectedForDelete}
+            />
 
+            {/* The Dialog Component */}
             {selectedForDelete && (
                 <DeleteVolunteerDialog
                     volunteer={selectedForDelete}

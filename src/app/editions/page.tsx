@@ -5,6 +5,7 @@ import ErrorAlert from "@/app/components/error-alert";
 import { buttonVariants } from "@/app/components/button";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 import { parseErrorMessage } from "@/types/errors";
 import { User } from "@/types/user";
@@ -19,6 +20,7 @@ type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
 export default async function EditionsPage({
     searchParams,
 }: Readonly<{ searchParams: PageSearchParams }>) {
+    const t = await getServerTranslations();
     const params = await searchParams;
     const stateFilter = typeof params.state === "string" ? params.state : "";
     const searchFilter = typeof params.search === "string" ? params.search : "";
@@ -67,9 +69,9 @@ export default async function EditionsPage({
 
     return (
         <PageShell
-            eyebrow="Edition management"
-            title="Editions"
-            description="Browse the yearly editions currently registered in the FIRST LEGO League platform."
+            eyebrow={t.editions.management}
+            title={t.editions.title}
+            description={t.editions.description}
             bannerClassName="editions-page-banner"
             panelClassName="editions-page-panel"
             heroAside={isAdmin(currentUser) ? (
@@ -80,7 +82,7 @@ export default async function EditionsPage({
                         "editions-page-create-button",
                     )}
                 >
-                    <span className="editions-page-create-button__label">Create new edition</span>
+                    <span className="editions-page-create-button__label">{t.editions.createNew}</span>
                     <ArrowUpRight aria-hidden="true" />
                 </Link>
             ) : undefined}

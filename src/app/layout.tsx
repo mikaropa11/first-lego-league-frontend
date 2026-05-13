@@ -2,6 +2,7 @@ import { AuthProvider } from "@/app/components/authentication";
 import { FavoritesProvider } from "@/app/components/favorites-provider";
 import Footer from "@/app/components/footer";
 import Navbar from "@/app/components/navbar";
+import { LanguageProvider } from "@/lib/languageContext";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
@@ -28,19 +29,21 @@ export default function RootLayout({
           `,
                     }}
                 />
-                <AuthProvider>
-                    <FavoritesProvider>
-                        <div className="flex min-h-screen flex-col">
-                            <Suspense fallback={null}>
-                                <Navbar />
-                            </Suspense>
+                <LanguageProvider>
+                    <AuthProvider>
+                        <FavoritesProvider>
+                            <div className="flex min-h-screen flex-col">
+                                <Suspense fallback={null}>
+                                    <Navbar />
+                                </Suspense>
 
-                            <main className="flex-1">{children}</main>
+                                <main className="flex-1">{children}</main>
 
-                            <Footer />
-                        </div>
-                    </FavoritesProvider>
-                </AuthProvider>
+                                <Footer />
+                            </div>
+                        </FavoritesProvider>
+                    </AuthProvider>
+                </LanguageProvider>
             </body>
         </html>
     );

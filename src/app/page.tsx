@@ -2,48 +2,56 @@
 
 import PageShell from "@/app/components/page-shell";
 import Link from "next/link";
-import { useAuth } from "@/app/components/authentication"; // Importamos el hook de auth
+import { useAuth } from "@/app/components/authentication";
+import { useTranslations } from "@/lib/languageContext";
+
+interface Module {
+  href: string;
+  title: string;
+  description: string;
+  roles?: string[];
+}
 
 export default function Home() {
-  const { user } = useAuth(); // Obtenemos el usuario actual
+  const { user } = useAuth();
+  const t = useTranslations();
 
-  // Definimos todos los módulos posibles
-  const allModules = [
+  const allModules: Module[] = [
     {
       href: "/teams",
-      title: "Teams",
-      description: "Participating teams and details.",
+      title: t.home.modules.teams.title,
+      description: t.home.modules.teams.description,
     },
     {
       href: "/volunteers",
-      title: "Volunteers",
-      description: "Volunteer management.",
+      title: t.home.modules.volunteers.title,
+      description: t.home.modules.volunteers.description,
     },
     {
       href: "/matches",
-      title: "Matches",
-      description: "Scheduled competitions and results.",
+      title: t.home.modules.matches.title,
+      description: t.home.modules.matches.description,
     },
     {
       href: "/scientific-projects",
-      title: "Scientific Projects",
-      description: "Innovation projects by edition.",
+      title: t.home.modules.scientificProjects.title,
+      description: t.home.modules.scientificProjects.description,
     },
     {
       href: "/project-rooms",
-      title: "Project Rooms",
-      description: "Judging rooms, panels and assigned projects.",
+      title: t.home.modules.projectRooms.title,
+      description: t.home.modules.projectRooms.description,
     },
     {
       href: "/competition-tables",
-      title: "Competition Tables",
-      description: "Match tables and referee assignments.",
+      title: t.home.modules.competitionTables.title,
+      description: t.home.modules.competitionTables.description,
     },
     {
       href: "/administrators",
-      title: "Administrators",
-      description: "User role management.",
-      roles: ["ROLE_ADMIN"], 
+      title: t.home.modules.administrators.title,
+      description: t.home.modules.administrators.description,
+      roles: ["ROLE_ADMIN"],
     }
   ];
 
@@ -53,16 +61,16 @@ export default function Home() {
 
   return (
     <PageShell
-      eyebrow="International STEM program"
-      title="First LEGO League"
-      description="Robotics, innovation and teamwork for young participants."
+      eyebrow={t.home.eyebrow}
+      title={t.home.title}
+      description={t.home.description}
     >
       <div className="space-y-6">
         <div className="space-y-3">
-          <div className="page-eyebrow">Competition hub</div>
-          <h2 className="section-title">Platform modules</h2>
+          <div className="page-eyebrow">{t.home.competitionHub}</div>
+          <h2 className="section-title">{t.home.platformModules}</h2>
           <p className="section-copy max-w-2xl">
-            Explore the main areas of the platform for teams, editions and innovation projects.
+            {t.home.platformDescription}
           </p>
         </div>
 
@@ -71,13 +79,13 @@ export default function Home() {
             <Link key={module.href} href={module.href} className="module-card">
               <h2 className="module-title">{module.title}</h2>
               <p className="module-copy">{module.description}</p>
-              <span className="module-link">Open module</span>
+              <span className="module-link">{t.home.openModule}</span>
             </Link>
           ))}
         </div>
 
         <div className="border-t border-border pt-4 text-sm font-medium text-muted-foreground">
-          Innovation project, robot game and core values.
+          {t.home.tagline}
         </div>
       </div>
     </PageShell>

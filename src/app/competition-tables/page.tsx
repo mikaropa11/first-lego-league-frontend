@@ -4,6 +4,7 @@ import ErrorAlert from "@/app/components/error-alert";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { UsersService } from "@/api/userApi";
 import { isAdmin } from "@/lib/authz";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { parseErrorMessage } from "@/types/errors";
 import { redirect } from "next/navigation";
 import { CompetitionTable } from "@/types/competitionTable";
@@ -27,6 +28,7 @@ function toRefereeOption(r: Referee, assignedTableId: string | null): RefereeOpt
 }
 
 export default async function CompetitionTablesPage() {
+    const t = await getServerTranslations();
     const auth = await serverAuthProvider.getAuth();
     if (!auth) redirect("/login");
 
@@ -65,7 +67,7 @@ export default async function CompetitionTablesPage() {
     );
 
     const refereesByTable: Record<string, RefereeOption[]> = {};
-    const assignedMap = new Map<string, string>(); // refereeHref → tableId
+    const assignedMap = new Map<string, string>();
 
     for (const result of tableRefereeResults) {
         if (result.status === "fulfilled") {
@@ -84,9 +86,9 @@ export default async function CompetitionTablesPage() {
 
     return (
         <PageShell
-            eyebrow="Administration"
-            title="Competition Tables"
-            description="Manage physical match tables and assign referees."
+            eyebrow={t.competitionTables.management}
+            title={t.competitionTables.title}
+            description={t.competitionTables.description}
         >
             {error && <ErrorAlert message={error} />}
 

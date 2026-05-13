@@ -8,7 +8,9 @@ import PageShell from "@/app/components/page-shell";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { isAdmin } from "@/lib/authz";
 import { getEncodedResourceId } from "@/lib/halRoute";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { getTeamDisplayName } from "@/lib/teamUtils";
+import type { Translations } from "@/lib/i18n";
 import { Edition } from "@/types/edition";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import { ScientificProject } from "@/types/scientificProject";
@@ -34,12 +36,16 @@ function isFinished(edition: Edition | null): boolean {
     return edition?.state?.toUpperCase() === "FINISHED";
 }
 
-function getEditionTitle(edition: Edition | null, id: string): string {
+function getEditionTitle(
+    edition: Edition | null,
+    id: string,
+    t: Translations,
+): string {
     if (edition?.year) {
-        return `${edition.year} Project Ranking`;
+        return `${edition.year} ${t.scientificProjects.projectRanking}`;
     }
 
-    return `Edition ${id} Project Ranking`;
+    return t.scientificProjects.projectRankingTitle.replace("{id}", id);
 }
 
 function isNotFoundLikeError(error: unknown): boolean {
@@ -106,8 +112,11 @@ function getResourceLabel(resource: Resource | null, fallback: string): string {
     return typeof label === "string" && label.length > 0 ? label : fallback;
 }
 
-async function getProjectRoomLabel(roomUri: string): Promise<string> {
-    const fallback = getUriLabel(roomUri, "Assigned room");
+async function getProjectRoomLabel(
+    roomUri: string,
+    fallbackLabel: string,
+): Promise<string> {
+    const fallback = getUriLabel(roomUri, fallbackLabel);
 
     try {
         const room = await fetchHalResource<Resource>(roomUri, serverAuthProvider);
@@ -118,7 +127,10 @@ async function getProjectRoomLabel(roomUri: string): Promise<string> {
     }
 }
 
-async function getProjectRoomLabels(projects: ScientificProject[]): Promise<Map<string, string>> {
+async function getProjectRoomLabels(
+    projects: ScientificProject[],
+    t: Translations,
+): Promise<Map<string, string>> {
     const uniqueRoomUris = new Map<string, string>();
 
     for (const project of projects) {
@@ -132,7 +144,7 @@ async function getProjectRoomLabels(projects: ScientificProject[]): Promise<Map<
     const roomLabels = await Promise.all(
         [...uniqueRoomUris.entries()].map(async ([normalizedRoomUri, roomUri]) => [
             normalizedRoomUri,
-            await getProjectRoomLabel(roomUri),
+            await getProjectRoomLabel(roomUri, t.scientificProjects.roomAssigned),
         ] as const)
     );
 
@@ -153,14 +165,18 @@ function sortProjects(projects: ScientificProject[], teamsByUri: Map<string, Tea
     });
 }
 
-async function buildRows(projects: ScientificProject[], teams: Team[]): Promise<ProjectRankingRow[]> {
+async function buildRows(
+    projects: ScientificProject[],
+    teams: Team[],
+    t: Translations,
+): Promise<ProjectRankingRow[]> {
     const teamsByUri = new Map(
         teams
             .map((team) => [normalizeUri(team.uri ?? team.link("self")?.href), team] as const)
             .filter((entry): entry is readonly [string, Team] => !!entry[0])
     );
     const sortedProjects = sortProjects(projects, teamsByUri);
-    const roomLabelsByUri = await getProjectRoomLabels(sortedProjects);
+    const roomLabelsByUri = await getProjectRoomLabels(sortedProjects, t);
     let previousScore: number | null = null;
     let previousRank = 0;
 
@@ -180,22 +196,28 @@ async function buildRows(projects: ScientificProject[], teams: Team[]): Promise<
             teamName: getTeamDisplayName(team),
             teamHref: teamId ? `/teams/${teamId}` : null,
             score,
-            room: roomLabelsByUri.get(roomUri ?? "") ?? "Unassigned",
+            room: roomLabelsByUri.get(roomUri ?? "") ?? t.scientificProjects.unassigned,
             rank,
         };
     }));
 }
 
-function ProjectRankingTable({ rows }: Readonly<{ rows: ProjectRankingRow[] }>) {
+function ProjectRankingTable({
+    rows,
+    t,
+}: Readonly<{
+    rows: ProjectRankingRow[];
+    t: Translations;
+}>) {
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-sm">
                 <thead>
                     <tr className="border-b border-border text-left text-muted-foreground">
                         <th scope="col" className="pb-3 pr-4 font-medium">#</th>
-                        <th scope="col" className="pb-3 pr-4 font-medium">Team</th>
-                        <th scope="col" className="pb-3 pr-4 font-medium text-right">Project Score</th>
-                        <th scope="col" className="pb-3 font-medium">Project Room</th>
+                        <th scope="col" className="pb-3 pr-4 font-medium">{t.table.team}</th>
+                        <th scope="col" className="pb-3 pr-4 font-medium text-right">{t.scientificProjects.projectScore}</th>
+                        <th scope="col" className="pb-3 font-medium">{t.scientificProjects.projectRoom}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -216,7 +238,7 @@ function ProjectRankingTable({ rows }: Readonly<{ rows: ProjectRankingRow[] }>) 
                                     )}
                                 </td>
                                 <td className={`py-3 pr-4 text-right ${isTop3 ? "font-semibold text-foreground" : ""}`}>
-                                    {row.score ?? "Not scored"}
+                                    {row.score ?? t.scientificProjects.notScored}
                                 </td>
                                 <td className="py-3 text-muted-foreground">{row.room}</td>
                             </tr>
@@ -229,6 +251,7 @@ function ProjectRankingTable({ rows }: Readonly<{ rows: ProjectRankingRow[] }>) 
 }
 
 export default async function ProjectRankingPage(props: Readonly<ProjectRankingPageProps>) {
+    const t = await getServerTranslations();
     const { id } = await props.params;
     const editionsService = new EditionsService(serverAuthProvider);
     const projectsService = new ScientificProjectsService(serverAuthProvider);
@@ -245,7 +268,7 @@ export default async function ProjectRankingPage(props: Readonly<ProjectRankingP
     } catch (e) {
         console.error("Failed to fetch edition:", e);
         error = isNotFoundLikeError(e)
-            ? "This edition does not exist."
+            ? t.errors.pageNotFound
             : parseErrorMessage(e);
     }
 
@@ -263,7 +286,7 @@ export default async function ProjectRankingPage(props: Readonly<ProjectRankingP
                 projectsService.getScientificProjectsByEdition(id),
                 editionsService.getEditionTeams(id),
             ]);
-            rows = await buildRows(projects, teams);
+            rows = await buildRows(projects, teams, t);
         } catch (e) {
             console.error("Failed to fetch project ranking:", e);
             rankingError = parseErrorMessage(e);
@@ -272,17 +295,17 @@ export default async function ProjectRankingPage(props: Readonly<ProjectRankingP
 
     return (
         <PageShell
-            eyebrow="Innovation project"
-            title={getEditionTitle(edition, id)}
-            description="Scientific projects ranked by score for this edition."
+            eyebrow={t.scientificProjects.eyebrow}
+            title={getEditionTitle(edition, id, t)}
+            description={t.scientificProjects.projectRankingDescription}
         >
             <div className="space-y-6">
                 {error && <ErrorAlert message={error} />}
 
                 {!error && !canViewScores && (
                     <EmptyState
-                        title="Project scores are not public yet"
-                        description="Administrators can review this ranking before the edition is marked as finished."
+                        title={t.scientificProjects.projectScoresNotPublic}
+                        description={t.scientificProjects.projectScoresNotPublicDescription}
                     />
                 )}
 
@@ -290,13 +313,13 @@ export default async function ProjectRankingPage(props: Readonly<ProjectRankingP
 
                 {!error && canViewScores && !rankingError && rows.length === 0 && (
                     <EmptyState
-                        title="No scientific projects found"
-                        description="There are no scientific projects for this edition yet."
+                        title={t.scientificProjects.noProjects}
+                        description={t.scientificProjects.noProjectsDescription}
                     />
                 )}
 
                 {!error && canViewScores && !rankingError && rows.length > 0 && (
-                    <ProjectRankingTable rows={rows} />
+                    <ProjectRankingTable rows={rows} t={t} />
                 )}
             </div>
         </PageShell>

@@ -8,6 +8,8 @@ import PaginationControls from "@/app/components/pagination-controls";
 import ScientificProjectTeamSearch from "@/app/components/scientific-project-team-search";
 import { serverAuthProvider } from "@/lib/authProvider";
 import { getEncodedResourceId } from "@/lib/halRoute";
+import { getServerTranslations } from "@/lib/i18n/server";
+import type { Translations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { NotFoundError, parseErrorMessage } from "@/types/errors";
 import type { HalPage } from "@/types/pagination";
@@ -76,7 +78,10 @@ function getScientificProjectRoomId(project: ScientificProject) {
   return roomUri ? getEncodedResourceId(roomUri) : null;
 }
 
-function getScientificProjectTeamLabel(project: ScientificProject) {
+function getScientificProjectTeamLabel(
+  project: ScientificProject,
+  t: Translations,
+) {
   const inlineTeam = project.team?.trim();
 
   if (inlineTeam && !isResourceReference(inlineTeam)) {
@@ -86,16 +91,21 @@ function getScientificProjectTeamLabel(project: ScientificProject) {
   const teamHref = project.link("team")?.href ?? inlineTeam;
   const teamId = teamHref ? getEncodedResourceId(teamHref) : null;
 
-  return teamId ? `Team ${teamId}` : "Team pending";
+  return teamId
+    ? `${t.scientificProjects.team} ${teamId}`
+    : t.scientificProjects.teamPending;
 }
 
-function getProjectHeadline(project: ScientificProject, index: number) {
-  const rawName = project.name?.trim();
-  const rawComments = project.comments?.trim() ?? "";
+function getProjectHeadline(
+  project: ScientificProject,
+  index: number,
+  t: Translations,
+) {
+  const rawComments = project.comments?.trim();
 
   if (!rawName && !rawComments) {
     return {
-      title: `Project ${index + 1}`,
+      title: `${t.scientificProjects.project} ${index + 1}`,
       summary: null,
     };
   }
@@ -105,8 +115,14 @@ function getProjectHeadline(project: ScientificProject, index: number) {
     .map((section) => section.trim())
     .filter(Boolean);
 
-  const title = rawName || sections[0] || `Project ${index + 1}`;
-  const summary = sections.slice(1).join(" ").replace(/\s+/g, " ").trim();
+  const title =
+     rawName || sections[0] || `${t.scientificProjects.project} ${index + 1}`;
+
+  const summary = sections
+    .slice(1)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 
   return {
     title,
@@ -134,20 +150,28 @@ function getProjectTone(project: ScientificProject): ProjectCardTone {
   return "pending";
 }
 
-function getProjectStatusLabel(tone: ProjectCardTone) {
+function getProjectStatusLabel(
+  tone: ProjectCardTone,
+  t: Translations,
+) {
   switch (tone) {
     case "evaluated":
-      return "Evaluated";
+      return t.scientificProjects.evaluated;
+
     case "assigned":
-      return "Room assigned";
+      return t.scientificProjects.roomAssigned;
+
     default:
-      return "Pending review";
+      return t.scientificProjects.pendingReview;
   }
 }
 
-function getProjectScoreLabel(project: ScientificProject) {
+function getProjectScoreLabel(
+  project: ScientificProject,
+  t: Translations,
+) {
   if (project.score === undefined || project.score === null) {
-    return "Awaiting score";
+    return t.scientificProjects.awaitingScore;
   }
 
   return `${project.score} pts`;
@@ -157,9 +181,11 @@ function getProjectStats(projects: ScientificProject[]): ProjectStats {
   const scoredProjects = projects.filter(
     (project) => project.score !== undefined && project.score !== null,
   );
+
   const assignedRoomCount = projects.filter((project) =>
     Boolean(getScientificProjectRoomId(project)),
   ).length;
+
   const totalScore = scoredProjects.reduce(
     (sum, project) => sum + (project.score ?? 0),
     0,
@@ -175,12 +201,15 @@ function getProjectStats(projects: ScientificProject[]): ProjectStats {
   };
 }
 
-function formatAverageScore(averageScore: number | null) {
+function formatAverageScore(
+  averageScore: number | null,
+  t: Translations,
+) {
   if (averageScore === null) {
-    return "No scores yet";
+    return t.scientificProjects.noScoresYet;
   }
 
-  return `${averageScoreFormatter.format(averageScore)} pts average`;
+  return `${averageScoreFormatter.format(averageScore)} pts ${t.scientificProjects.average}`;
 }
 
 function StatCard({
@@ -202,14 +231,17 @@ function StatCard({
             <div className="scientific-projects-page-stat-card__label">
               {label}
             </div>
+
             <div className="scientific-projects-page-stat-card__value">
               {value}
             </div>
           </div>
+
           <div className="scientific-projects-page-stat-card__icon">
             <Icon aria-hidden="true" />
           </div>
         </div>
+
         <p className="scientific-projects-page-stat-card__description">
           {description}
         </p>
@@ -221,16 +253,24 @@ function StatCard({
 function ProjectCard({
   project,
   index,
+  t,
 }: Readonly<{
   project: ScientificProject;
   index: number;
+  t: Translations;
 }>) {
   const tone = getProjectTone(project);
-  const statusLabel = getProjectStatusLabel(tone);
-  const teamLabel = getScientificProjectTeamLabel(project);
+
+  const statusLabel = getProjectStatusLabel(tone, t);
+
+  const teamLabel = getScientificProjectTeamLabel(project, t);
+
   const roomId = getScientificProjectRoomId(project);
+
   const projectId = getScientificProjectHref(project);
-  const { title, summary } = getProjectHeadline(project, index);
+
+  const { title, summary } = getProjectHeadline(project, index, t);
+
   const cardContent = (
     <article
       className="scientific-projects-page-project-card"
@@ -239,8 +279,10 @@ function ProjectCard({
       <div className="scientific-projects-page-project-card__body">
         <div className="scientific-projects-page-project-card__masthead">
           <div className="scientific-projects-page-project-card__serial">
-            Project {String(index + 1).padStart(2, "0")}
+            {t.scientificProjects.project}{" "}
+            {String(index + 1).padStart(2, "0")}
           </div>
+
           <div className="scientific-projects-page-project-card__badge">
             {statusLabel}
           </div>
@@ -248,11 +290,13 @@ function ProjectCard({
 
         <div className="scientific-projects-page-project-card__header">
           <div className="scientific-projects-page-project-card__kicker">
-            Scientific project
+            {t.scientificProjects.scientificProject}
           </div>
+
           <h3 className="scientific-projects-page-project-card__title">
             {title}
           </h3>
+
           {summary && (
             <p className="scientific-projects-page-project-card__summary">
               {summary}
@@ -263,27 +307,32 @@ function ProjectCard({
         <div className="scientific-projects-page-project-card__facts">
           <div className="scientific-projects-page-project-card__fact">
             <div className="scientific-projects-page-project-card__fact-label">
-              Score
+              {t.scientificProjects.score}
             </div>
+
             <div className="scientific-projects-page-project-card__fact-value">
-              {getProjectScoreLabel(project)}
+              {getProjectScoreLabel(project, t)}
             </div>
           </div>
 
           <div className="scientific-projects-page-project-card__fact">
             <div className="scientific-projects-page-project-card__fact-label">
-              Room
+              {t.scientificProjects.room}
             </div>
+
             <div className="scientific-projects-page-project-card__fact-value">
-              {roomId ? `Room ${roomId}` : "Pending assignment"}
+              {roomId
+                ? `${t.scientificProjects.room} ${roomId}`
+                : t.scientificProjects.pendingAssignment}
             </div>
           </div>
         </div>
 
         <div className="scientific-projects-page-project-card__team">
           <div className="scientific-projects-page-project-card__team-label">
-            Presenting team
+            {t.scientificProjects.presentingTeam}
           </div>
+
           <p className="scientific-projects-page-project-card__team-value">
             {teamLabel}
           </p>
@@ -297,7 +346,10 @@ function ProjectCard({
                 : "scientific-projects-page-project-card__action scientific-projects-page-project-card__action--disabled"
             }
           >
-            {projectId ? "View details" : "Details unavailable"}
+            {projectId
+              ? t.scientificProjects.viewDetails
+              : t.scientificProjects.detailsUnavailable}
+
             {projectId && <ArrowUpRight aria-hidden="true" />}
           </div>
         </div>
@@ -320,6 +372,8 @@ function ProjectCard({
 export default async function ScientificProjectsPage({
   searchParams,
 }: Readonly<{ searchParams: PageSearchParams }>) {
+  const t = await getServerTranslations();
+
   const params = await searchParams;
   const year = getSingleParam(params.year);
   const teamName = getSingleParam(params.teamName)?.trim();
@@ -342,11 +396,15 @@ export default async function ScientificProjectsPage({
 
     if (year) {
       const editionsService = new EditionsService(serverAuthProvider);
+
       let editionId: string | null = null;
 
       try {
         const edition = await editionsService.getEditionByYear(year);
-        editionId = edition?.uri ? getEncodedResourceId(edition.uri) : null;
+
+        editionId = edition?.uri
+          ? getEncodedResourceId(edition.uri)
+          : null;
       } catch (editionError) {
         if (!(editionError instanceof NotFoundError)) {
           throw editionError;
@@ -356,20 +414,27 @@ export default async function ScientificProjectsPage({
       if (editionId) {
         if (teamName) {
           projects = projects.filter(
-            (project) => getScientificProjectEditionId(project) === editionId,
+            (project) =>
+              getScientificProjectEditionId(project) === editionId,
           );
         } else {
-          projects = await service.getScientificProjectsByEdition(editionId);
+          projects =
+            await service.getScientificProjectsByEdition(editionId);
         }
       } else {
         projects = [];
       }
     } else if (!teamName) {
-      result = await service.getScientificProjectsPaged(urlPage - 1, PAGE_SIZE);
+      result = await service.getScientificProjectsPaged(
+        urlPage - 1,
+        PAGE_SIZE,
+      );
+
       projects = result.items;
     }
   } catch (e) {
     console.error("Failed to fetch scientific projects:", e);
+
     error = parseErrorMessage(e);
   }
 
@@ -383,9 +448,9 @@ export default async function ScientificProjectsPage({
 
   return (
     <PageShell
-      eyebrow="Innovation projects"
-      title="Scientific Projects"
-      description="Browse the innovation work submitted across FIRST LEGO League editions."
+      eyebrow={t.scientificProjects.innovationProjects}
+      title={t.scientificProjects.title}
+      description={t.scientificProjects.description}
       bannerClassName="scientific-projects-page-banner"
       panelClassName="scientific-projects-page-panel"
       heroAside={
@@ -398,8 +463,9 @@ export default async function ScientificProjectsPage({
             )}
           >
             <span className="scientific-projects-page-create-button__label">
-              New project
+              {t.scientificProjects.newProject}
             </span>
+
             <ArrowUpRight aria-hidden="true" />
           </Link>
         ) : undefined
@@ -408,23 +474,29 @@ export default async function ScientificProjectsPage({
       <div className="scientific-projects-page-content">
         <section className="scientific-projects-page-search-shell">
           <div className="scientific-projects-page-search-copy">
-            <div className="page-eyebrow">Project list</div>
-            <h2 className="section-title">Season project overview</h2>
+            <div className="page-eyebrow">
+              {t.scientificProjects.projectList}
+            </div>
+
+            <h2 className="section-title">
+              {t.scientificProjects.seasonOverview}
+            </h2>
+
             <p className="section-copy scientific-projects-page-search-description">
-              Search by team, keep seasonal filters in view, and move through
-              project evaluations.
+              {t.scientificProjects.searchDescription}
             </p>
 
             {hasActiveFilters && (
               <div className="scientific-projects-page-filter-chips">
                 {year && (
                   <span className="scientific-projects-page-filter-chip">
-                    Edition {year}
+                    {t.scientificProjects.edition} {year}
                   </span>
                 )}
+
                 {teamName && (
                   <span className="scientific-projects-page-filter-chip">
-                    Team: {teamName}
+                    {t.scientificProjects.team}: {teamName}
                   </span>
                 )}
               </div>
@@ -440,11 +512,14 @@ export default async function ScientificProjectsPage({
 
         {!error && projects.length === 0 && (
           <EmptyState
-            title="No scientific projects found"
+            title={t.scientificProjects.noProjects}
             description={
               teamName
-                ? `No scientific projects match "${teamName}".`
-                : "There are currently no scientific projects available to display."
+                ? t.scientificProjects.noProjectsMatch.replace(
+                    "{teamName}",
+                    teamName,
+                  )
+                : t.scientificProjects.noProjectsAvailable
             }
           />
         )}
@@ -454,48 +529,56 @@ export default async function ScientificProjectsPage({
             <div className="scientific-projects-page-stats-grid">
               <StatCard
                 icon={FlaskConical}
-                label="Projects in view"
+                label={t.scientificProjects.projectsInView}
                 value={String(totalCount)}
                 description={
                   hasActiveFilters
-                    ? "The current roster reflects the active filters and search criteria."
-                    : "A live slice of the scientific projects directory for this page."
+                    ? t.scientificProjects.projectsFiltered
+                    : t.scientificProjects.projectsDirectory
                 }
               />
 
               <StatCard
                 icon={ClipboardCheck}
-                label="Evaluated projects"
+                label={t.scientificProjects.evaluatedProjects}
                 value={String(evaluatedCount)}
                 description={
                   evaluatedCount > 0
-                    ? `${formatAverageScore(averageScore)} with ${pendingCount} project${pendingCount === 1 ? "" : "s"} still pending review.`
-                    : "No project on this page has received a score yet."
+                    ? `${formatAverageScore(
+                        averageScore,
+                        t,
+                      )} ${t.scientificProjects.with} ${pendingCount} ${t.scientificProjects.projectsPending}`
+                    : t.scientificProjects.noProjectsScored
                 }
               />
 
               <StatCard
                 icon={DoorOpen}
-                label="Rooms assigned"
+                label={t.scientificProjects.roomsAssigned}
                 value={String(assignedRoomCount)}
                 description={
                   assignedRoomCount > 0
-                    ? `${assignedRoomCount} project${assignedRoomCount === 1 ? "" : "s"} already linked to an evaluation room.`
-                    : "Room assignments have not been published for the current selection."
+                    ? `${assignedRoomCount} ${t.scientificProjects.projectsLinked}`
+                    : t.scientificProjects.roomsNotPublished
                 }
               />
             </div>
 
             <ul className="scientific-projects-page-grid">
               {projects.map((project, index) => {
-                const resourceUri = project.uri ?? project.link("self")?.href;
+                const resourceUri =
+                  project.uri ?? project.link("self")?.href;
 
                 return (
                   <li
                     key={resourceUri ?? `scientific-project-${index}`}
                     className="scientific-projects-page-item"
                   >
-                    <ProjectCard project={project} index={index} />
+                    <ProjectCard
+                      project={project}
+                      index={index}
+                      t={t}
+                    />
                   </li>
                 );
               })}
@@ -509,7 +592,7 @@ export default async function ScientificProjectsPage({
                   hasPrev={result.hasPrev}
                   basePath="/scientific-projects"
                   variant="editorial"
-                  contextLabel="Move through the project directory page by page."
+                  contextLabel={t.scientificProjects.paginationLabel}
                 />
               </div>
             )}
