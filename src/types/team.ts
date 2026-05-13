@@ -9,6 +9,7 @@ export interface TeamEntity {
     educationalCenter?: string | null;
     foundationYear?: number;
     inscriptionDate?: string;
+    edition?: string;
 }
 
 export type Team = TeamEntity & Resource;
@@ -61,6 +62,7 @@ export interface CreateTeamPayload {
     educationalCenter: string;
     category: TeamCategory;
     inscriptionDate: string;
+    edition?: string;
 }
 
 export interface CreateTeamMemberPayload {

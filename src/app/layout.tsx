@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/lib/languageContext";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
+import "../css/volunteers-list.css";
 
 export const metadata: Metadata = {
     title: "First LEGO League",

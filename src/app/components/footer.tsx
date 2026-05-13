@@ -8,6 +8,8 @@ import {
     Trophy,
 } from "lucide-react";
 import Link from "next/link";
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 
 const SCOREBOARD_URL = "https://dev-scoreboard.firstlegoleague.win";
 const GITHUB_ORGANIZATION_URL =
@@ -46,12 +48,12 @@ export default function Footer() {
     ];
 
     return (
-        <footer className="border-t border-border bg-card/95">
-            <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-                <div className="rounded-3xl border border-border bg-background/70 p-8 shadow-sm">
-                    <div className="grid gap-8 lg:grid-cols-[1fr_1.5fr] lg:items-center">
+        <footer className="border-t border-border bg-card">
+            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+                <div className="grid gap-10 py-12 sm:grid-cols-[1fr_auto] sm:gap-16">
+                    <div className="flex flex-col gap-4">
                         <div>
-                            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-primary/80">
+                            <div className="text-[0.68rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
                                 Catalunya Robotics
                             </p>
 
@@ -115,6 +117,16 @@ export default function Footer() {
                             {t.footer.backToHome}
                         </Link>
                     </div>
+                </div>
+
+                <div className="flex flex-col gap-2 border-t border-border py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                    <p>© {year} First LEGO League Platform</p>
+                    <Link
+                        href="/"
+                        className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:text-foreground"
+                    >
+                        Back to home
+                    </Link>
                 </div>
             </div>
         </footer>

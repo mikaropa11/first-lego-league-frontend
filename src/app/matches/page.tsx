@@ -15,7 +15,7 @@ import { getEncodedResourceId } from "@/lib/halRoute";
 import { getServerTranslations } from "@/lib/i18n/server";
 import type { Translations } from "@/lib/i18n";
 import { filterMatchesByTeam, normalizeTeamSearch } from "@/lib/matchFilter";
-import { formatMatchTime } from "@/lib/matchUtils";
+import { formatMatchDuration, formatMatchTime } from "@/lib/matchUtils";
 import { cn } from "@/lib/utils";
 import { parseErrorMessage } from "@/types/errors";
 import { Match } from "@/types/match";
@@ -499,6 +499,13 @@ function MatchCard({
                         <div className="matches-page-match-card__fact-label">End</div>
                         <div className="matches-page-match-card__fact-value">
                             {formatMatchTime(match.endTime)}
+                        </div>
+                    </div>
+
+                    <div className="matches-page-match-card__fact">
+                        <div className="matches-page-match-card__fact-label">Duration</div>
+                        <div className="matches-page-match-card__fact-value">
+                            {formatMatchDuration(match.startTime, match.endTime)}
                         </div>
                     </div>
 

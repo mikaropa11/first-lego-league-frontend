@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/app/components/authentication";
+import { buttonVariants } from "@/app/components/button";
 import EditionSelector from "@/app/components/edition-selector";
 import FavoritesDropdown from "@/app/components/favorites-dropdown";
 import { useFavorites } from "@/app/components/favorites-provider";

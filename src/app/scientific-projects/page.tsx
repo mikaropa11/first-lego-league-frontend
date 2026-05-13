@@ -103,7 +103,7 @@ function getProjectHeadline(
 ) {
   const rawComments = project.comments?.trim();
 
-  if (!rawComments) {
+  if (!rawName && !rawComments) {
     return {
       title: `${t.scientificProjects.project} ${index + 1}`,
       summary: null,
@@ -116,7 +116,7 @@ function getProjectHeadline(
     .filter(Boolean);
 
   const title =
-    sections[0] || `${t.scientificProjects.project} ${index + 1}`;
+     rawName || sections[0] || `${t.scientificProjects.project} ${index + 1}`;
 
   const summary = sections
     .slice(1)

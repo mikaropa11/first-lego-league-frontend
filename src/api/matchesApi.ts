@@ -43,6 +43,8 @@ export interface MatchFilterParams {
     readonly size?: number;
 }
 
+export type MatchStateTransition = "SCHEDULED" | "IN_PROGRESS" | "FINISHED";
+
 function getSafeMatchResultResourcePath(resourceUri: string) {
     let resourcePath = resourceUri;
 
@@ -180,6 +182,46 @@ export class MatchesService {
     async updateMatch(id: string, data: CreateMatchPayload): Promise<void> {
         const matchId = encodeURIComponent(id);
         await patchHal(`/matches/${matchId}`, data, this.authStrategy);
+    }
+
+    async updateMatchState(id: string, newState: MatchStateTransition): Promise<Match> {
+        const matchId = encodeURIComponent(id);
+        const authorization = await this.authStrategy.getAuth();
+
+        const response = await fetch(`${API_BASE_URL}/matches/${matchId}/state`, {
+            method: "PATCH",
+            headers: {
+                Accept: "application/vnd.hal+json",
+                "Content-Type": "application/json",
+                ...(authorization ? { Authorization: authorization } : {}),
+            },
+            body: JSON.stringify({ state: newState }),
+            cache: "no-store",
+        });
+
+        if (!response.ok) {
+            const message = await response.text();
+            throw new ApiError(
+                message || `Failed to update match state. HTTP ${response.status}`,
+                response.status,
+                true,
+            );
+        }
+
+        const updatedMatch = await this.getMatchById(id);
+
+        if (updatedMatch.state && updatedMatch.state !== newState) {
+            throw new ApiError(
+                `Match state was not persisted. Expected ${newState}, but API returned ${updatedMatch.state}.`,
+                500,
+                true,
+            );
+        }
+
+        return {
+            ...updatedMatch,
+            state: updatedMatch.state ?? newState,
+        };
     }
 
     async getMatchResults(matchUri: string): Promise<MatchResult[]> {
