@@ -43,6 +43,7 @@ export type CreateTeamFormPayload = {
     inscriptionDate: string;
     foundationYear: string;
     category: string;
+    edition?: string;
     members: TeamMemberInput[];
     coaches: CoachInput[];
 };
@@ -67,6 +68,7 @@ type ValidatedTeamPayload = {
     inscriptionDate: string;
     foundationYear: number;
     category: TeamCategory;
+    edition: string | null;
     members: NormalizedTeamMemberInput[];
     coaches: NormalizedCoachInput[];
 };
@@ -247,6 +249,9 @@ function validateTeamPayload(data: CreateTeamFormPayload): ValidatedTeamPayload 
         data.foundationYear,
         "Foundation year must be a valid number."
     );
+    const edition = typeof data.edition === "string" && data.edition.trim().length > 0
+        ? data.edition.trim()
+        : null;
 
     if (foundationYear < 1998) {
         throw new ValidationError("Foundation year must be 1998 or later.");
@@ -343,6 +348,7 @@ function validateTeamPayload(data: CreateTeamFormPayload): ValidatedTeamPayload 
         inscriptionDate,
         foundationYear,
         category: normalizedCategory,
+        edition,
         members,
         coaches,
     };
@@ -384,6 +390,7 @@ export async function createTeam(data: CreateTeamFormPayload) {
         educationalCenter: validatedData.educationalCenter,
         category: validatedData.category,
         inscriptionDate: validatedData.inscriptionDate,
+        edition: validatedData.edition ?? undefined,
     });
 
     const createdCoachIds: number[] = [];

@@ -6,18 +6,21 @@ import { Label } from '@/app/components/label';
 import { Textarea } from '@/app/components/textarea';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { SubmitHandler, UseFormRegisterReturn, useForm } from 'react-hook-form';
+import { SubmitHandler, UseFormRegisterReturn, useForm, useWatch } from 'react-hook-form';
 
 export type Option = { label: string; value: string };
 
 export type ProjectFormValues = {
     name: string;
     description: string;
+    score: number;
     edition: string;
     team: string;
 };
 
 type ProjectFormAction = (data: {
+    name: string;
+    score: number;
     comments: string;
     team: string;
     edition: string;
@@ -81,12 +84,15 @@ export function ScientificProjectForm({
     savingLabel,
 }: Readonly<ScientificProjectFormProps>) {
     const [submitError, setSubmitError] = useState<string | null>(null);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<ProjectFormValues>({ defaultValues });
+    const { register, handleSubmit, control, setValue, formState: { errors, isSubmitting } } = useForm<ProjectFormValues>({
+        defaultValues: {
+            score: 0,
+            ...defaultValues,
+        },
+    });
     const router = useRouter();
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const watchedEdition = watch('edition');
+    const watchedEdition = useWatch({ control, name: 'edition' });
     const visibleTeams = teamsPerEdition[watchedEdition] ?? [];
 
     const isInitialRender = useRef(true);
@@ -102,7 +108,9 @@ export function ScientificProjectForm({
         setSubmitError(null);
         try {
             const result = await action({
-                comments: `${data.name}\n\n${data.description}`,
+                name: data.name,
+                score: data.score,
+                comments: data.description,
                 team: data.team,
                 edition: data.edition,
             });
@@ -156,6 +164,24 @@ export function ScientificProjectForm({
                     })}
                 />
                 {errors.description && <p id="description-error" className="text-sm text-destructive">{errors.description.message}</p>}
+            </div>
+
+            <div className="grid gap-2">
+                <Label htmlFor="score">Score</Label>
+                <Input
+                    id="score"
+                    type="number"
+                    min={0}
+                    step={1}
+                    aria-invalid={!!errors.score}
+                    aria-describedby={errors.score ? 'score-error' : undefined}
+                    {...register('score', {
+                        required: 'Score is required',
+                        valueAsNumber: true,
+                        min: { value: 0, message: 'Score cannot be negative' },
+                    })}
+                />
+                {errors.score && <p id="score-error" className="text-sm text-destructive">{errors.score.message}</p>}
             </div>
 
             <OptionSelect

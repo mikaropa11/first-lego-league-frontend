@@ -2,6 +2,7 @@ import { Resource } from "halfred";
 
 export interface ScientificProjectEntity {
     uri?: string;
+    name?: string;
     team?: string;
     edition?: string;
     projectRoom?: string;

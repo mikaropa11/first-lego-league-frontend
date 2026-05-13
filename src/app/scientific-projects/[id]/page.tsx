@@ -42,7 +42,7 @@ function getProjectTitle(project: ScientificProject | null, id: string): string 
         return `Scientific Project ${decodedId}`;
     }
 
-    return project.comments ? project.comments : `Scientific Project ${id}`;
+    return project.name ?? project.comments ?? `Scientific Project ${id}`;
 }
 
 export default async function ScientificProjectDetailPage(

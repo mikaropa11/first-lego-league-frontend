@@ -90,9 +90,10 @@ function getScientificProjectTeamLabel(project: ScientificProject) {
 }
 
 function getProjectHeadline(project: ScientificProject, index: number) {
-  const rawComments = project.comments?.trim();
+  const rawName = project.name?.trim();
+  const rawComments = project.comments?.trim() ?? "";
 
-  if (!rawComments) {
+  if (!rawName && !rawComments) {
     return {
       title: `Project ${index + 1}`,
       summary: null,
@@ -104,7 +105,7 @@ function getProjectHeadline(project: ScientificProject, index: number) {
     .map((section) => section.trim())
     .filter(Boolean);
 
-  const title = sections[0] || `Project ${index + 1}`;
+  const title = rawName || sections[0] || `Project ${index + 1}`;
   const summary = sections.slice(1).join(" ").replace(/\s+/g, " ").trim();
 
   return {
