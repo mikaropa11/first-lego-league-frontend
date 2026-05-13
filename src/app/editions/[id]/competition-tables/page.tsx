@@ -13,6 +13,20 @@ interface CompetitionTablesPageProps {
     readonly params: Promise<{ id: string }>;
 }
 
+function isNotFoundLikeError(error: unknown): boolean {
+    if (error instanceof NotFoundError) {
+        return true;
+    }
+
+    if (typeof error === "object" && error !== null) {
+        const statusCode = Reflect.get(error, "statusCode");
+        const status = Reflect.get(error, "status");
+        return statusCode === 404 || status === 404;
+    }
+
+    return false;
+}
+
 export default async function CompetitionTablesPage(props: Readonly<CompetitionTablesPageProps>) {
     const { id } = await props.params;
     const service = new EditionsService(serverAuthProvider);
@@ -24,7 +38,7 @@ export default async function CompetitionTablesPage(props: Readonly<CompetitionT
         tables = await service.getEditionCompetitionTables(id);
     } catch (e) {
         console.error("Failed to fetch competition tables:", e);
-        error = e instanceof NotFoundError
+        error = isNotFoundLikeError(e)
             ? "This edition does not exist."
             : `Could not load competition tables. ${parseErrorMessage(e)}`;
     }

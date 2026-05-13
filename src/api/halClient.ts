@@ -249,7 +249,7 @@ async function executeHalRequest(config: {
             if (url.hostname === baseUrl.hostname) {
                 path = url.pathname + url.search;
             }
-        } catch (e) {
+        } catch {
             // If URL parsing fails, fallback to original path
         }
     }

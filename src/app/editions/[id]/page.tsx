@@ -77,6 +77,20 @@ function getEditionTitle(edition: Edition | null, id: string) {
     return `Edition ${id}`;
 }
 
+function isNotFoundLikeError(error: unknown): boolean {
+    if (error instanceof NotFoundError) {
+        return true;
+    }
+
+    if (typeof error === "object" && error !== null) {
+        const statusCode = Reflect.get(error, "statusCode");
+        const status = Reflect.get(error, "status");
+        return statusCode === 404 || status === 404;
+    }
+
+    return false;
+}
+
 interface EditionUriData {
     awards: Award[]; 
     mediaContents: MediaContent[];
@@ -157,7 +171,7 @@ export default async function EditionDetailPage(props: Readonly<EditionDetailPag
         edition = await editionsService.getEditionById(id);
     } catch (e) {
         console.error("Failed to fetch edition:", e);
-        error = e instanceof NotFoundError
+        error = isNotFoundLikeError(e)
             ? t.errors.pageNotFound
             : parseErrorMessage(e);
     }

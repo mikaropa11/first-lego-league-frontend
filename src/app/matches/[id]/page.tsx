@@ -202,7 +202,7 @@ export default async function MatchDetailPage(props: Readonly<MatchDetailPagePro
             });
         }).catch((e) => {
             console.error("Failed to fetch match round:", e);
-            return { round: null as Round | null, edition: null as Edition | null };
+            return { round: null, edition: null as Edition | null };
         });
 
         const [, roundDetails] = await Promise.all([

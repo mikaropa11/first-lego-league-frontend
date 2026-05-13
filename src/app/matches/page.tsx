@@ -1,11 +1,12 @@
 import { EditionsService } from "@/api/editionApi";
-import { MatchesService } from "@/api/matchesApi";
+import { CompetitionTableService } from "@/api/competitionTableApi";
+import { MatchesService, type MatchSearchItemResponse } from "@/api/matchesApi";
 import { fetchHalResource } from "@/api/halClient";
+import { RoundsService } from "@/api/roundsApi";
 import { UsersService } from "@/api/userApi";
 import { buttonVariants } from "@/app/components/button";
 import EmptyState from "@/app/components/empty-state";
 import ErrorAlert from "@/app/components/error-alert";
-import { Input } from "@/app/components/input";
 import PageShell from "@/app/components/page-shell";
 import PaginationControls from "@/app/components/pagination-controls";
 import { serverAuthProvider } from "@/lib/authProvider";
@@ -21,6 +22,8 @@ import { Match } from "@/types/match";
 import type { HalPage } from "@/types/pagination";
 import { Team } from "@/types/team";
 import { User } from "@/types/user";
+import type { CompetitionTable } from "@/types/competitionTable";
+import type { Round } from "@/types/round";
 import type { LucideIcon } from "lucide-react";
 import {
     ArrowUpRight,
@@ -31,6 +34,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { MatchesTimeline } from "./matches-timeline";
+import MatchesFilterBar from "./matches-filter-bar";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +42,11 @@ const PAGE_SIZE = 5;
 
 type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
 type MatchCardTone = "completed" | "live" | "scheduled" | "unknown";
+type SearchParamValue = string | string[] | undefined;
+type MatchFilterChip = {
+    readonly key: string;
+    readonly label: string;
+};
 
 type MatchesSearchState = {
     year?: string;
@@ -48,6 +57,11 @@ type MatchesSearchState = {
     teamQuery: string;
     normalizedTeamQuery: string;
     hasTeamFilter: boolean;
+    startTime?: string;
+    endTime?: string;
+    tableId?: string;
+    roundId?: string;
+    hasScheduleFilters: boolean;
 };
 
 type MatchStats = {
@@ -85,8 +99,13 @@ function compareMatchTimes(left: string = "", right: string = "") {
     return left.localeCompare(right);
 }
 
-function getSearchValue(value: string | string[] | undefined) {
+function getSearchValue(value: SearchParamValue) {
     return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
+
+function getOptionalSearchValue(value: SearchParamValue) {
+    const resolved = getSearchValue(value).trim();
+    return resolved.length > 0 ? resolved : undefined;
 }
 
 function isResourceReference(value: string | null | undefined) {
@@ -561,6 +580,11 @@ function getMatchesSearchState(params: Record<string, string | string[] | undefi
     const teamQuery = getSearchValue(params.team);
     const normalizedTeamQuery = normalizeTeamSearch(teamQuery);
     const hasTeamFilter = normalizedTeamQuery.length > 0;
+    const startTime = getOptionalSearchValue(params.startTime);
+    const endTime = getOptionalSearchValue(params.endTime);
+    const tableId = getOptionalSearchValue(params.tableId);
+    const roundId = getOptionalSearchValue(params.roundId);
+    const hasScheduleFilters = Boolean(startTime || endTime || tableId || roundId);
 
     return {
         year,
@@ -571,6 +595,11 @@ function getMatchesSearchState(params: Record<string, string | string[] | undefi
         teamQuery,
         normalizedTeamQuery,
         hasTeamFilter,
+        startTime,
+        endTime,
+        tableId,
+        roundId,
+        hasScheduleFilters,
     };
 }
 
@@ -585,10 +614,45 @@ async function getCurrentUser() {
 
 async function getMatchesForView(
     service: MatchesService,
-    { year, hasTeamFilter, urlPage }: Pick<MatchesSearchState, "year" | "hasTeamFilter" | "urlPage">,
+    { year, hasTeamFilter, hasScheduleFilters, urlPage, startTime, endTime, tableId, roundId }:
+        Pick<MatchesSearchState, "year" | "hasTeamFilter" | "hasScheduleFilters" | "urlPage" | "startTime" | "endTime" | "tableId" | "roundId">,
 ) {
     let editionId: string | null = null;
     let result: HalPage<Match> = emptyMatchesPage;
+
+    if (hasScheduleFilters) {
+        const page = urlPage - 1;
+        const response = await service.getMatchesFiltered({
+            startTime,
+            endTime,
+            tableId,
+            roundId,
+            page,
+            size: PAGE_SIZE,
+        });
+        const matches = await Promise.all(
+            response.items.map(async (item: MatchSearchItemResponse) => {
+                try {
+                    return await service.getMatchById(item.matchId);
+                } catch (error) {
+                    console.error(`Failed to fetch filtered match ${item.matchId}:`, error);
+                    return null;
+                }
+            })
+        );
+        const filteredMatches = matches.filter((match): match is Match => match !== null);
+
+        return {
+            matches: filteredMatches,
+            result: {
+                items: filteredMatches,
+                currentPage: response.page,
+                hasPrev: response.page > 0,
+                hasNext: (response.page + 1) * response.size < response.totalElements,
+            },
+            editionId,
+        };
+    }
 
     if (year) {
         const editionsService = new EditionsService(serverAuthProvider);
@@ -691,6 +755,8 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
     let result: HalPage<Match> = emptyMatchesPage;
     let error: string | null = null;
     let editionId: string | null = null;
+    let competitionTables: CompetitionTable[] = [];
+    let rounds: Round[] = [];
 
     const currentUser: User | null = await getCurrentUser();
 
@@ -711,6 +777,10 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
         const urlParams = new URLSearchParams();
         if (year) urlParams.set("year", year);
         if (teamQuery) urlParams.set("team", teamQuery);
+        if (searchState.startTime) urlParams.set("startTime", searchState.startTime);
+        if (searchState.endTime) urlParams.set("endTime", searchState.endTime);
+        if (searchState.tableId) urlParams.set("tableId", searchState.tableId);
+        if (searchState.roundId) urlParams.set("roundId", searchState.roundId);
         if (newView === "calendar") urlParams.set("view", "calendar");
         if (urlPage > 1 && newView !== "calendar") urlParams.set("page", String(urlPage));
         const qs = urlParams.toString();
@@ -719,6 +789,7 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
 
     const { totalCount, liveCount, tableCount, roundCount } = getMatchStats(matches);
     const hasHeroActions = isAdmin(currentUser) || Boolean(editionId);
+    const filterChips = getMatchFilterChips(searchState);
 
     return (
         <PageShell
@@ -874,6 +945,20 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                     </div>
                 </section>
 
+                {!error ? (
+                    <MatchesFilterBar
+                        year={year}
+                        view={view}
+                        teamQuery={teamQuery}
+                        startTime={searchState.startTime}
+                        endTime={searchState.endTime}
+                        tableId={searchState.tableId}
+                        roundId={searchState.roundId}
+                        competitionTables={competitionTables}
+                        rounds={rounds}
+                    />
+                ) : null}
+
                 {error ? <ErrorAlert message={error} /> : null}
 
                 {!error ? (
@@ -882,10 +967,9 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                             icon={Clock3}
                             label="Matches in view"
                             value={String(totalCount)}
-                            description={
-                                hasTeamFilter || year
-                                    ? "This count reflects the active filters and seasonal context."
-                                    : "A live page from the rolling match schedule."
+                            description={searchState.hasScheduleFilters || hasTeamFilter || year
+                                ? "This count reflects the active filters and seasonal context."
+                                : "A live page from the rolling match schedule."
                             }
                         />
 
@@ -989,6 +1073,15 @@ export default async function MatchesPage({ searchParams }: Readonly<{ searchPar
                                     basePath="/matches"
                                     variant="editorial"
                                     contextLabel="Move through the published match schedule page by page."
+                                    queryParams={{
+                                        year,
+                                        team: teamQuery || undefined,
+                                        startTime: searchState.startTime,
+                                        endTime: searchState.endTime,
+                                        tableId: searchState.tableId,
+                                        roundId: searchState.roundId,
+                                        view: isCalendarView ? "calendar" : undefined,
+                                    }}
                                 />
                             </div>
                         ) : null}

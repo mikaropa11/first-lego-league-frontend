@@ -1,4 +1,6 @@
 import { MatchesService } from "@/api/matchesApi";
+import { CompetitionTableService } from "@/api/competitionTableApi";
+import { RoundsService } from "@/api/roundsApi";
 import { TeamsService } from "@/api/teamApi";
 import { UsersService } from "@/api/userApi";
 import ErrorAlert from "@/app/components/error-alert";
@@ -185,6 +187,8 @@ async function getOptionalRelation<T>(promise: Promise<T>) {
 
 async function fetchMatchEditData(id: string): Promise<MatchEditData> {
     const matchesService = new MatchesService(serverAuthProvider);
+    const roundsService = new RoundsService(serverAuthProvider);
+    const competitionTableService = new CompetitionTableService(serverAuthProvider);
     const teamsService = new TeamsService(serverAuthProvider);
 
     const [
@@ -200,9 +204,9 @@ async function fetchMatchEditData(id: string): Promise<MatchEditData> {
         matchTeamB,
     ] = await Promise.all([
         matchesService.getMatchById(id),
-        matchesService.getRounds(),
-        matchesService.getCompetitionTables(),
-        matchesService.getReferees(),
+        roundsService.getRounds(),
+        competitionTableService.getTables(),
+        competitionTableService.getReferees(),
         teamsService.getTeams(),
         getOptionalRelation(matchesService.getMatchRound(id)),
         getOptionalRelation(matchesService.getMatchCompetitionTable(id)),

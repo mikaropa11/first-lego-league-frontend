@@ -8,7 +8,7 @@ export interface FavoriteItem {
     readonly secondaryLabel?: string;
 }
 
-const STORAGE_KEY = "fll:favorites";
+export const FAVORITES_STORAGE_KEY = "fll:favorites";
 
 export function getFavoriteKey(item: Pick<FavoriteItem, "type" | "id">): string {
     return `${item.type}:${item.id}`;
@@ -32,27 +32,7 @@ function normalizeFavorite(item: FavoriteItem): FavoriteItem {
     };
 }
 
-function isFavoriteItem(value: unknown): value is FavoriteItem {
-    if (!value || typeof value !== "object") {
-        return false;
-    }
-
-    const candidate = value as Partial<FavoriteItem> & { type?: unknown };
-
-    return (
-        isFavoriteEntityType(candidate.type) &&
-        typeof candidate.id === "string" &&
-        typeof candidate.label === "string" &&
-        typeof candidate.href === "string"
-    );
-}
-
-export function loadFavorites(): FavoriteItem[] {
-    if (typeof window === "undefined") {
-        return [];
-    }
-
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+export function parseFavorites(raw: string): FavoriteItem[] {
     if (!raw) {
         return [];
     }
@@ -86,12 +66,36 @@ export function loadFavorites(): FavoriteItem[] {
     }
 }
 
+function isFavoriteItem(value: unknown): value is FavoriteItem {
+    if (!value || typeof value !== "object") {
+        return false;
+    }
+
+    const candidate = value as Partial<FavoriteItem> & { type?: unknown };
+
+    return (
+        isFavoriteEntityType(candidate.type) &&
+        typeof candidate.id === "string" &&
+        typeof candidate.label === "string" &&
+        typeof candidate.href === "string"
+    );
+}
+
+export function loadFavorites(): FavoriteItem[] {
+    if (typeof window === "undefined") {
+        return [];
+    }
+
+    const raw = window.localStorage.getItem(FAVORITES_STORAGE_KEY);
+    return parseFavorites(raw ?? "");
+}
+
 export function saveFavorites(favorites: FavoriteItem[]): void {
     if (typeof window === "undefined") {
         return;
     }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites.map(normalizeFavorite)));
+    window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites.map(normalizeFavorite)));
 }
 
 export function upsertFavorite(current: FavoriteItem[], item: FavoriteItem): FavoriteItem[] {

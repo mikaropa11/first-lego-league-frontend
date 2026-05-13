@@ -48,6 +48,20 @@ function getEditionTitle(
     return t.scientificProjects.projectRankingTitle.replace("{id}", id);
 }
 
+function isNotFoundLikeError(error: unknown): boolean {
+    if (error instanceof NotFoundError) {
+        return true;
+    }
+
+    if (typeof error === "object" && error !== null) {
+        const statusCode = Reflect.get(error, "statusCode");
+        const status = Reflect.get(error, "status");
+        return statusCode === 404 || status === 404;
+    }
+
+    return false;
+}
+
 function normalizeUri(resourceUri: string | null | undefined): string | null {
     if (!resourceUri) {
         return null;
@@ -253,7 +267,7 @@ export default async function ProjectRankingPage(props: Readonly<ProjectRankingP
         edition = await editionsService.getEditionById(id);
     } catch (e) {
         console.error("Failed to fetch edition:", e);
-        error = e instanceof NotFoundError
+        error = isNotFoundLikeError(e)
             ? t.errors.pageNotFound
             : parseErrorMessage(e);
     }

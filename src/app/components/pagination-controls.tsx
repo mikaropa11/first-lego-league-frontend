@@ -10,6 +10,7 @@ interface PaginationControlsProps {
     readonly variant?: "default" | "editorial";
     readonly contextLabel?: string;
     readonly searchQuery?: string;
+    readonly queryParams?: Record<string, string | undefined>;
 }
 
 export default function PaginationControls({
@@ -20,12 +21,18 @@ export default function PaginationControls({
     variant,
     contextLabel,
     searchQuery,
+    queryParams,
 }: PaginationControlsProps) {
     if (!hasNext && !hasPrev) return null;
 
     function buildHref(page: number) {
         const params = new URLSearchParams();
         if (searchQuery) params.set('search', searchQuery);
+        if (queryParams) {
+            Object.entries(queryParams).forEach(([key, value]) => {
+                if (value) params.set(key, value);
+            });
+        }
         params.set('page', String(page));
         return `${basePath}?${params.toString()}`;
     }

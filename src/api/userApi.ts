@@ -1,6 +1,14 @@
 import type { AuthStrategy } from "@/lib/authProvider";
 import { User } from "@/types/user";
-import { fetchHalCollection, fetchHalPagedCollection, fetchHalResource, createHalResource, patchHal, mergeHal, deleteHal } from "./halClient";
+import {
+    createHalResource,
+    deleteHal,
+    fetchHalCollection,
+    fetchHalPagedCollection,
+    fetchHalResource,
+    mergeHal,
+    patchHal,
+} from "./halClient";
 import type { HalPage } from "@/types/pagination";
 import { Resource } from "halfred";
 import { ApiError } from "@/types/errors";
@@ -12,14 +20,14 @@ export type CreateUserPayload = {
 };
 
 export class UsersService {
-    constructor(private readonly authStrategy: AuthStrategy) { }
+    constructor(private readonly authStrategy: AuthStrategy) {}
 
     async getUsers(): Promise<User[]> {
-        return fetchHalCollection<User>('/users', this.authStrategy, 'users');
+        return fetchHalCollection<User>("/users", this.authStrategy, "users");
     }
 
     async getUsersPaged(page: number, size: number): Promise<HalPage<User>> {
-        return fetchHalPagedCollection<User>('/users', this.authStrategy, 'users', page, size);
+        return fetchHalPagedCollection<User>("/users", this.authStrategy, "users", page, size);
     }
 
     async getUserById(id: string): Promise<User> {
@@ -30,32 +38,41 @@ export class UsersService {
     async getCurrentUser(): Promise<User | null> {
         const auth = await this.authStrategy.getAuth();
         if (!auth) return null;
+
         try {
-            return await fetchHalResource<User>('/identity', this.authStrategy);
+            return await fetchHalResource<User>("/identity", this.authStrategy);
         } catch (error: unknown) {
             const apiError = error as { statusCode?: number; status?: number };
-            
-            if (apiError?.statusCode === 401 || apiError?.status === 401) {
+
+            if (
+                apiError?.statusCode === 401 ||
+                apiError?.status === 401 ||
+                apiError?.statusCode === 403 ||
+                apiError?.status === 403 ||
+                apiError?.statusCode === 404 ||
+                apiError?.status === 404
+            ) {
                 return null;
             }
+
             throw error;
         }
     }
 
     async createUser(user: CreateUserPayload): Promise<User> {
         const payload = { id: user.username, email: user.email, password: user.password };
-        return createHalResource<User>('/users', payload, this.authStrategy, 'user');
+        return createHalResource<User>("/users", payload, this.authStrategy, "user");
     }
 
     async createAdministrator(user: CreateUserPayload): Promise<User> {
         const payload = { id: user.username, email: user.email, password: user.password };
-        return createHalResource<User>('/administrators', payload, this.authStrategy, 'administrator');
+        return createHalResource<User>("/administrators", payload, this.authStrategy, "administrator");
     }
 
-    async patchUser(id: string, data: Partial<Pick<User, 'email' | 'password'>>): Promise<User> {
+    async patchUser(id: string, data: Partial<Pick<User, "email" | "password">>): Promise<User> {
         const userId = encodeURIComponent(id);
         const resource = await patchHal(`/users/${userId}`, data as Resource, this.authStrategy);
-        if (!resource) throw new ApiError('No response from server', 500, true);
+        if (!resource) throw new ApiError("No response from server", 500, true);
         return mergeHal<User>(resource);
     }
 
